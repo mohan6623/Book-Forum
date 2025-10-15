@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import { Book as BookIcon, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import BookCard from "@/components/BookCard";
 import FilterPanel from "@/components/FilterPanel";
-import { mockBooks } from "@/data/mockBooks";
+import { bookService } from "@/services/bookService";
 import { FilterOptions } from "@/types/book";
 
 const Index = () => {
@@ -16,15 +17,22 @@ const Index = () => {
     maxRating: 5,
   });
 
-  // Filter and search logic
-  const filteredBooks = useMemo(() => {
-    return mockBooks.filter((book) => {
-      // Search filter
-      const matchesSearch =
-        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.category.toLowerCase().includes(searchQuery.toLowerCase());
+  // Fetch books from backend
+  const { data: booksData, isLoading, error } = useQuery({
+    queryKey: ['books', searchQuery],
+    queryFn: () => {
+      if (searchQuery.trim()) {
+        return bookService.searchBooks(searchQuery, searchQuery, searchQuery);
+      }
+      return bookService.getBooks(0, 100);
+    },
+  });
 
+  // Filter logic
+  const filteredBooks = useMemo(() => {
+    if (!booksData?.content) return [];
+    
+    return booksData.content.filter((book) => {
       // Category filter
       const matchesCategory =
         filters.category.length === 0 ||
@@ -34,9 +42,9 @@ const Index = () => {
       const matchesRating =
         book.rating >= filters.minRating && book.rating <= filters.maxRating;
 
-      return matchesSearch && matchesCategory && matchesRating;
+      return matchesCategory && matchesRating;
     });
-  }, [searchQuery, filters]);
+  }, [booksData, filters]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,7 +92,20 @@ const Index = () => {
         </div>
 
         {/* Books Grid */}
-        {filteredBooks.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-4">Loading books...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 animate-fade-in">
+            <BookIcon className="h-20 w-20 text-destructive mx-auto mb-4 opacity-50" />
+            <h3 className="text-2xl font-semibold text-foreground mb-2">Failed to load books</h3>
+            <p className="text-muted-foreground">
+              Make sure your Spring Boot backend is running on http://localhost:8080
+            </p>
+          </div>
+        ) : filteredBooks.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {filteredBooks.map((book, index) => (
               <BookCard key={book.id} book={book} index={index} />
