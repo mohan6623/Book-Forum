@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Book as BookIcon, Sparkles } from "lucide-react";
+import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import BookCard from "@/components/BookCard";
 import FilterPanel from "@/components/FilterPanel";
@@ -39,6 +40,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      
       {/* Hero Section */}
       <header className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_50%)]" />
@@ -82,7 +85,7 @@ const Index = () => {
 
         {/* Books Grid */}
         {filteredBooks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {filteredBooks.map((book, index) => (
               <BookCard key={book.id} book={book} index={index} />
             ))}

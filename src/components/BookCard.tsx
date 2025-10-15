@@ -38,37 +38,24 @@ const BookCard = ({ book, index }: BookCardProps) => {
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      </div>
-
-      {/* Book Info */}
-      <div className="p-5 space-y-3">
-        <div>
-          <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-300">
-            {book.title}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
-            {book.author}
-          </p>
-        </div>
-
-        {/* Rating Display */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={`h-4 w-4 ${
-                  i < Math.floor(book.rating)
-                    ? "fill-secondary text-secondary"
-                    : "text-muted-foreground/30"
-                } transition-colors duration-300`}
-              />
-            ))}
-          </div>
-          <span className="text-sm font-semibold text-foreground">
+        
+        {/* Rating Badge - Bottom Left */}
+        <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full bg-background/90 backdrop-blur-sm shadow-lg border border-border/50">
+          <Star className="h-3 w-3 fill-secondary text-secondary" />
+          <span className="text-xs font-bold text-foreground">
             {book.rating.toFixed(1)}
           </span>
         </div>
+      </div>
+
+      {/* Book Info */}
+      <div className="p-3 space-y-1">
+        <h3 className="font-semibold text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-300">
+          {book.title}
+        </h3>
+        <p className="text-xs text-muted-foreground line-clamp-1">
+          {book.author}
+        </p>
       </div>
 
       {/* Hover Glow Effect */}
