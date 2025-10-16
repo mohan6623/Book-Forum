@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Book as BookIcon, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
@@ -11,11 +11,24 @@ import { FilterOptions } from "@/types/book";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     category: [],
     minRating: 0,
     maxRating: 5,
   });
+
+  // Handle scroll to move search bar to header
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const searchBarThreshold = 200;
+      setIsScrolled(scrollPosition > searchBarThreshold);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch books from backend
   const { data: booksData, isLoading, error } = useQuery({
@@ -48,7 +61,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header 
+        isScrolled={isScrolled}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onFilterToggle={() => setIsFilterOpen(true)}
+      />
       
       {/* Hero Section */}
       <header className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
@@ -69,11 +87,17 @@ const Index = () => {
             </p>
           </div>
 
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onFilterToggle={() => setIsFilterOpen(true)}
-          />
+          <div 
+            className={`w-full max-w-4xl mx-auto transition-all duration-300 ease-in-out ${
+              isScrolled ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'
+            }`}
+          >
+            <SearchBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onFilterToggle={() => setIsFilterOpen(true)}
+            />
+          </div>
         </div>
       </header>
 
