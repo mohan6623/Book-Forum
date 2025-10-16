@@ -14,8 +14,8 @@ const Index = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     category: [],
-    minRating: 0,
-    maxRating: 5,
+    authors: [],
+    rating: 0,
   });
 
   // Handle scroll to move search bar to header
@@ -51,11 +51,15 @@ const Index = () => {
         filters.category.length === 0 ||
         filters.category.includes(book.category);
 
-      // Rating filter
-      const matchesRating =
-        book.rating >= filters.minRating && book.rating <= filters.maxRating;
+      // Author filter
+      const matchesAuthor =
+        filters.authors.length === 0 ||
+        filters.authors.includes(book.author);
 
-      return matchesCategory && matchesRating;
+      // Rating filter
+      const matchesRating = filters.rating === 0 || book.rating >= filters.rating;
+
+      return matchesCategory && matchesAuthor && matchesRating;
     });
   }, [booksData, filters]);
 

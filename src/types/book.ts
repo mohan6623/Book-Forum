@@ -29,6 +29,6 @@ export interface PageResponse<T> {
 
 export type FilterOptions = {
   category: string[];
-  minRating: number;
-  maxRating: number;
+  authors: string[];
+  rating: number; // Minimum rating filter (0, 1, 2, 3, 4, 5)
 };

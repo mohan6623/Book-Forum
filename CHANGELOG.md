@@ -41,3 +41,30 @@ All notable changes to this project will be documented in this file.
 - Frontend: React + TypeScript + Vite
 - Styling: Tailwind CSS with custom design system
 - State Management: React Query (@tanstack/react-query)
+
+## [Latest] - Enhanced Filter System & User Profile Menu
+
+### Added
+- Redesigned filter panel with minimal, modern design inspired by reference UI
+- Active filter badges/pills with individual remove buttons
+- "Clear all" button for quick filter reset
+- Three-column filter layout: Categories, Rating, Authors
+- Search inputs for filtering categories and authors lists
+- Radio button rating filter (5+, 4+, 3+, 2+, 1+ stars) with star icons
+- User profile dropdown menu in header with avatar icon
+- Profile menu options: Login/Logout, Settings, Theme toggle, Help
+- Color-coded filter sections (blue for categories, yellow for rating, purple for authors)
+
+### Changed
+- Updated filter structure to include authors array and simplified rating to single minimum value
+- Replaced standalone theme toggle button with user profile menu
+- Theme toggle moved inside profile dropdown menu
+- Filter panel now 900px wide with better spacing for three-column layout
+- Filter panel now shows active filters as removable badges at the top
+
+### Technical Details
+- Updated `src/types/book.ts` - Changed FilterOptions: added authors[], changed rating from min/max to single value
+- Completely rewrote `src/components/FilterPanel.tsx` with new minimal three-column design
+- Created `src/components/UserProfileMenu.tsx` with dropdown menu using shadcn components
+- Updated `src/components/Header.tsx` to use UserProfileMenu, removed theme button
+- Updated `src/pages/Index.tsx` filter logic to handle authors and simplified rating filter
