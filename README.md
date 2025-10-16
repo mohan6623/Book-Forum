@@ -71,3 +71,53 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Backend integration
+
+This UI is wired to the Spring Boot backend in `springSecurity` running on http://localhost:8080 by default.
+
+- Configure the base URL via Vite env:
+
+	Create a `.env.local` in the project root if you need to override:
+
+	```sh
+	VITE_API_BASE_URL=http://localhost:8080
+	```
+
+- Endpoints used (from backend):
+	- GET `/books?page=&size=` returns a Spring `Page<BookDto>`
+	- GET `/bookid/{id}` returns `BookDto`
+	- GET `/books/search?title=&author=&category=&page=&size=` returns a page
+	- POST `/book/{id}/rating` (auth)
+	- GET `/book/{id}/ratings`
+	- GET `/book/{id}/comment?page=&size=` (204 when empty)
+	- POST `/book/{id}/comment` (auth)
+	- PUT `/book/{id}/comment` (auth)
+	- DELETE `/comment/{commentId}` (auth)
+	- Admin only:
+		- POST `/addbook` (multipart)
+		- PUT `/book/{id}` (multipart)
+		- DELETE `/book/{id}`
+
+- Auth endpoints:
+	- POST `/register` -> 201
+	- POST `/login` -> `{ token, user }`
+
+The frontend stores the JWT in localStorage and sends it in the `Authorization: Bearer <token>` header for protected calls.
+
+## Run locally (dev)
+
+Start the frontend dev server (it will run on http://localhost:5173):
+
+```powershell
+npm install
+npm run dev
+```
+
+If you need to override the API URL, create `.env.local` in the project root with:
+
+```text
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+

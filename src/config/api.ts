@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'http://localhost:8080';
+// Prefer env override (Vite) with sensible default for local Spring Boot
+export const API_BASE_URL =
+  (import.meta as any)?.env?.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
 export const API_ENDPOINTS = {
   BOOKS: '/books',
@@ -11,6 +13,6 @@ export const API_ENDPOINTS = {
   GET_RATINGS: (id: number) => `/book/${id}/ratings`,
   GET_COMMENTS: (id: number) => `/book/${id}/comment`,
   ADD_COMMENT: (id: number) => `/book/${id}/comment`,
-  UPDATE_COMMENT: `/book/{id}/comment`,
+  UPDATE_COMMENT: (id: number) => `/book/${id}/comment`,
   DELETE_COMMENT: (commentId: number) => `/comment/${commentId}`,
 } as const;
