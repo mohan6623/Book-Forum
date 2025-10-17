@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, ArrowLeft, MessageSquare, TrendingUp, User, Clock } from "lucide-react";
+import { Star, ArrowLeft, MessageSquare, TrendingUp, User, Clock, LogIn } from "lucide-react";
 import { bookService } from "@/services/bookService";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
+import UserProfileMenu from "@/components/UserProfileMenu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +42,7 @@ const BookDetails = () => {
   const [userRating, setUserRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [currentCommentPage, setCurrentCommentPage] = useState(0);
   const isAuthenticated = authService.isAuthenticated();
 
   const bookId = parseInt(id || "0");
@@ -59,10 +61,10 @@ const BookDetails = () => {
     enabled: bookId > 0,
   });
 
-  // Fetch comments
+  // Fetch comments with pagination
   const { data: commentsData, isLoading: commentsLoading } = useQuery({
-    queryKey: ["comments", bookId],
-    queryFn: () => bookService.getComments(bookId, 0, 50),
+    queryKey: ["comments", bookId, currentCommentPage],
+    queryFn: () => bookService.getComments(bookId, currentCommentPage, 10),
     enabled: bookId > 0,
   });
 
@@ -92,8 +94,9 @@ const BookDetails = () => {
   const addCommentMutation = useMutation({
     mutationFn: (comment: string) => bookService.addComment(bookId, comment),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments", bookId] });
+      queryClient.invalidateQueries({ queryKey: ["comments", bookId, currentCommentPage] });
       setNewComment("");
+      setCurrentCommentPage(0);
       toast({
         title: "Comment posted!",
         description: "Your comment has been added successfully.",
@@ -112,7 +115,7 @@ const BookDetails = () => {
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: number) => bookService.deleteComment(commentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments", bookId] });
+      queryClient.invalidateQueries({ queryKey: ["comments", bookId, currentCommentPage] });
       toast({
         title: "Comment deleted",
         description: "Your comment has been removed.",
@@ -182,7 +185,7 @@ const BookDetails = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
@@ -191,13 +194,14 @@ const BookDetails = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Books
           </Button>
+          <UserProfileMenu />
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Book Image & Rating */}
+          {/* Left Column - Book Image */}
           <div className="lg:col-span-1">
             <Card className="overflow-hidden sticky top-24">
               <div className="relative aspect-[3/4] bg-muted">
@@ -221,58 +225,18 @@ const BookDetails = () => {
                   <span className="text-sm text-muted-foreground">/ 5</span>
                 </div>
               </div>
-
-              {/* Rate This Book */}
-              <div className="p-6">
-                <h3 className="font-semibold mb-3 text-foreground">Rate this book</h3>
-                <div className="flex items-center gap-2 mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => {
-                        if (isAuthenticated) {
-                          setUserRating(star);
-                          setShowRatingDialog(true);
-                        } else {
-                          toast({
-                            title: "Authentication required",
-                            description: "Please log in to rate this book.",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      onMouseEnter={() => setHoveredRating(star)}
-                      onMouseLeave={() => setHoveredRating(0)}
-                      className="transition-transform hover:scale-110"
-                    >
-                      <Star
-                        className={`h-8 w-8 transition-colors ${
-                          star <= (hoveredRating || userRating)
-                            ? "fill-secondary text-secondary"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-                {!isAuthenticated && (
-                  <p className="text-xs text-muted-foreground">
-                    Please log in to rate this book
-                  </p>
-                )}
-              </div>
             </Card>
           </div>
 
           {/* Right Column - Details, Ratings, Comments */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6">
             {/* Book Info */}
             <div className="space-y-4">
               <div>
-                <h1 className="text-4xl font-bold text-foreground mb-2">
+                <h1 className="text-2xl font-bold text-foreground mb-2">
                   {book.title}
                 </h1>
-                <p className="text-xl text-muted-foreground">by {book.author}</p>
+                <p className="text-lg text-muted-foreground">by {book.author}</p>
               </div>
 
               <div className="flex items-center gap-4 flex-wrap">
@@ -292,38 +256,87 @@ const BookDetails = () => {
                   </span>
                 ) : null}
               </div>
+
+              {/* Book Description */}
+              {book.description && (
+                <div className="pt-2">
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Description</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {book.description}
+                  </p>
+                </div>
+              )}
             </div>
 
             <Separator />
 
+            {/* Rate This Book */}
+            <Card className="p-6 relative">
+              {!isAuthenticated && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <LogIn className="h-10 w-10 text-primary mx-auto mb-3" />
+                    <p className="text-foreground font-semibold mb-2">Sign in to rate this book</p>
+                    <p className="text-sm text-muted-foreground">Create an account or log in to share your rating</p>
+                  </div>
+                </div>
+              )}
+              <h3 className="font-semibold mb-3 text-foreground">Rate this book</h3>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        setUserRating(star);
+                        setShowRatingDialog(true);
+                      }
+                    }}
+                    onMouseEnter={() => isAuthenticated && setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    className="transition-transform hover:scale-110"
+                    disabled={!isAuthenticated}
+                  >
+                    <Star
+                      className={`h-8 w-8 transition-colors ${
+                        star <= (hoveredRating || userRating)
+                          ? "fill-secondary text-secondary"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </Card>
+
             {/* Ratings Breakdown */}
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">
+            <Card className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">
                   Rating Distribution
-                </h2>
+                </h3>
               </div>
 
               {totalRatings > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {ratingPercentages.map(({ stars, count, percentage }) => (
-                    <div key={stars} className="flex items-center gap-4">
-                      <div className="flex items-center gap-1 w-20">
-                        <span className="text-sm font-medium">{stars}</span>
-                        <Star className="h-4 w-4 fill-secondary text-secondary" />
+                    <div key={stars} className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 w-16">
+                        <span className="text-xs font-medium">{stars}</span>
+                        <Star className="h-3 w-3 fill-secondary text-secondary" />
                       </div>
                       <div className="flex-1">
-                        <Progress value={percentage} className="h-2" />
+                        <Progress value={percentage} className="h-1.5" />
                       </div>
-                      <span className="text-sm text-muted-foreground w-16 text-right">
+                      <span className="text-xs text-muted-foreground w-14 text-right">
                         {count} ({percentage.toFixed(0)}%)
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-8">
+                <p className="text-muted-foreground text-center py-4 text-sm">
                   No ratings yet. Be the first to rate this book!
                 </p>
               )}
@@ -339,13 +352,18 @@ const BookDetails = () => {
               </div>
 
               {/* Add Comment */}
-              <div className="mb-8">
+              <div className="mb-8 relative">
+                {!isAuthenticated && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <LogIn className="h-10 w-10 text-primary mx-auto mb-3" />
+                      <p className="text-foreground font-semibold mb-2">Sign in to comment</p>
+                      <p className="text-sm text-muted-foreground">Join the discussion about this book</p>
+                    </div>
+                  </div>
+                )}
                 <Textarea
-                  placeholder={
-                    isAuthenticated
-                      ? "Share your thoughts about this book..."
-                      : "Please log in to comment"
-                  }
+                  placeholder="Share your thoughts about this book..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   disabled={!isAuthenticated}
@@ -368,40 +386,67 @@ const BookDetails = () => {
                   <p className="text-muted-foreground mt-2">Loading comments...</p>
                 </div>
               ) : commentsData?.content && commentsData.content.length > 0 ? (
-                <div className="space-y-4">
-                  {commentsData.content.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="p-4 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                            <User className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm text-foreground">
-                              {comment.username}
-                            </p>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {new Date(comment.createdAt).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                <>
+                  <div className="space-y-4">
+                    {commentsData.content.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="p-4 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                              <User className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-foreground">
+                                {comment.username}
+                              </p>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                {new Date(comment.createdAt).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </div>
                             </div>
                           </div>
                         </div>
+                        <p className="text-foreground whitespace-pre-wrap pl-10">
+                          {comment.comment}
+                        </p>
                       </div>
-                      <p className="text-foreground whitespace-pre-wrap pl-10">
-                        {comment.comment}
-                      </p>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {commentsData.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-6">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentCommentPage(prev => Math.max(0, prev - 1))}
+                        disabled={currentCommentPage === 0}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Page {currentCommentPage + 1} of {commentsData.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentCommentPage(prev => Math.min(commentsData.totalPages - 1, prev + 1))}
+                        disabled={currentCommentPage >= commentsData.totalPages - 1}
+                      >
+                        Next
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-8">
                   <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />

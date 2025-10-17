@@ -68,3 +68,32 @@ All notable changes to this project will be documented in this file.
 - Created `src/components/UserProfileMenu.tsx` with dropdown menu using shadcn components
 - Updated `src/components/Header.tsx` to use UserProfileMenu, removed theme button
 - Updated `src/pages/Index.tsx` filter logic to handle authors and simplified rating filter
+
+## [Latest] - BookDetails Page Enhancements
+
+### Added
+- User profile menu in BookDetails page header for consistency
+- Book description display on BookDetails page
+- Authentication gate with blur overlay for rating feature
+- Authentication gate with blur overlay for commenting feature
+- Visual login prompts for non-authenticated users
+- Pagination controls for comments (10 comments per page)
+- Page navigation buttons (Previous/Next) with page counter
+- Description property to Book interface and BookDto mapping
+
+### Changed
+- Fixed TypeScript errors in dropdown-menu.tsx (DropdownMenuLabel and DropdownMenuSeparator)
+- Reduced book title size from text-4xl to text-2xl for better readability
+- Moved Rating Distribution below "Rate this book" section
+- Made Rating Distribution card more compact (reduced padding and font sizes)
+- Separated book information and rating sections into distinct cards
+- Comments now use proper pagination instead of loading all 50 at once
+- Updated comment query keys to include page number for cache management
+- Comment section resets to page 0 when new comment is added
+
+### Technical Details
+- Fixed return types in `src/components/ui/dropdown-menu.tsx`
+- Updated `src/types/book.ts` to include description in Book interface
+- Modified `src/services/bookService.ts` mapping to include description
+- Updated `src/pages/BookDetails.tsx` with pagination state and controls
+- Implemented proper backend pagination integration following Spring Boot Page structure

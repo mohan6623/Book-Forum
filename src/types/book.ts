@@ -6,6 +6,7 @@ export interface Book {
   image: string; // resolved data URL assembled from imageType + base64
   rating: number; // average rating 0-5
   category: string;
+  description?: string;
   comments?: number;
 }
 
@@ -74,5 +75,6 @@ export function mapBookDtoToBook(dto: BookDto): Book {
     category: dto.category,
     image: toImageUrl(dto),
     rating: dto.averageRating ?? 0,
+    description: dto.description,
   };
 }
