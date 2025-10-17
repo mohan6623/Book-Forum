@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@/config/api';
 
-type JwtResponse = {
+export type JwtResponse = {
   token: string;
   user: {
     id?: number;
@@ -52,6 +52,10 @@ export const authService = {
 
   logout() {
     clearToken();
+  },
+
+  isAuthenticated(): boolean {
+    return getToken() !== null;
   },
 };
 

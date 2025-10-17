@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { Book } from "@/types/book";
 import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 interface BookCardProps {
   book: Book;
@@ -18,10 +19,16 @@ const categoryColors: Record<string, string> = {
 };
 
 const BookCard = ({ book, index }: BookCardProps) => {
+  const navigate = useNavigate();
   const categoryColorClass = categoryColors[book.category.toLowerCase()] || "bg-category-default";
+
+  const handleClick = () => {
+    navigate(`/book/${book.id}`);
+  };
 
   return (
     <Card
+      onClick={handleClick}
       className="group relative overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-500 hover:shadow-hover cursor-pointer animate-fade-in-up"
       style={{ animationDelay: `${index * 50}ms` }}
     >
