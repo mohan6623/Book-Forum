@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { authService } from "@/services/authService";
+import { useAuth } from "@/contexts/AuthContext";
 import UserProfileMenu from "@/components/UserProfileMenu";
 import {
   AlertDialog,
@@ -38,12 +38,12 @@ const BookDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [newComment, setNewComment] = useState("");
   const [userRating, setUserRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [currentCommentPage, setCurrentCommentPage] = useState(0);
-  const isAuthenticated = authService.isAuthenticated();
 
   const bookId = parseInt(id || "0");
 

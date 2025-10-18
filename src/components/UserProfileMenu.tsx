@@ -1,4 +1,4 @@
-import { User, Settings, HelpCircle, LogIn, LogOut } from "lucide-react";
+import { User, Settings, HelpCircle, LogIn, LogOut, Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const UserProfileMenu = () => {
   const { theme, setTheme } = useTheme();
-  const isLoggedIn = false; // TODO: Replace with actual auth state
+  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <DropdownMenu>
@@ -28,11 +31,31 @@ const UserProfileMenu = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        {isLoggedIn ? (
+        {isAuthenticated && user && (
           <>
+            <DropdownMenuLabel>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium">{user.username}</p>
+                {isAdmin && (
+                  <p className="text-xs text-muted-foreground">Administrator</p>
+                )}
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        
+        {isAuthenticated ? (
+          <>
+            {isAdmin && (
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => navigate('/admin')}
+              >
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Panel</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
@@ -43,7 +66,10 @@ const UserProfileMenu = () => {
             </DropdownMenuItem>
           </>
         ) : (
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={() => navigate('/login')}
+          >
             <LogIn className="mr-2 h-4 w-4" />
             <span>Login</span>
           </DropdownMenuItem>
@@ -71,10 +97,16 @@ const UserProfileMenu = () => {
           <span>Help</span>
         </DropdownMenuItem>
         
-        {isLoggedIn && (
+        {isAuthenticated && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+            <DropdownMenuItem 
+              className="cursor-pointer text-destructive focus:text-destructive"
+              onClick={() => {
+                logout();
+                navigate('/');
+              }}
+            >
               <LogOut className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>

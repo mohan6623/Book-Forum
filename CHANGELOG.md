@@ -2,7 +2,72 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2025-01-XX] - Authentication & Authorization System
+
+### Added
+- **Authentication System**
+  - Created `AuthContext` for managing authentication state across the application
+  - Implemented JWT token decoding and validation
+  - Added token expiration checking and automatic logout
+  - Created login page (`/login`) with username and password authentication
+  - Created register page (`/register`) with username, email, password, and confirm password fields
+  - Added password validation (minimum 6 characters)
+  - Added password confirmation matching validation
+  - Added authentication state persistence across page refreshes
+
+- **Role-Based Access Control**
+  - Implemented admin role detection from JWT tokens (`ROLE_ADMIN`)
+  - Created `ProtectedRoute` component for route protection
+  - Added role-based UI elements in navigation
+  - Admin panel automatically redirects non-admin users
+
+- **Admin Panel** (`/admin`)
+  - Created comprehensive admin panel accessible only to users with `ROLE_ADMIN`
+  - **Add Book Tab**: Form to add new books with title, author, category, description, and image upload
+  - **Update Book Tab**: Form to update existing books by ID with optional image replacement
+  - **Delete Book Tab**: Form to delete books by ID
+  - Category dropdown with predefined options (Fiction, Non-Fiction, Science, History, Biography, Fantasy, Mystery, Romance)
+  - Real-time loading states and success/error notifications
+  - Integrated with existing bookService for backend communication
+
+- **UI Enhancements**
+  - Updated `UserProfileMenu` to show actual authentication state
+  - Added username display in profile menu for authenticated users
+  - Added "Admin Panel" menu item for admin users (Shield icon)
+  - Implemented proper login/logout functionality in navigation
+  - Added functional login/logout actions with navigation
+
+- **Book Details Page Security**
+  - Added authentication gates for rating and commenting features
+  - Blur overlay with "Sign in to rate/comment" message for unauthenticated users
+  - Disabled rating stars and comment input for non-authenticated users
+  - Users can still view existing ratings and comments without authentication
+  - Updated BookDetails to use AuthContext instead of direct authService calls
+
+### Dependencies
+- Added `jwt-decode@latest` package for JWT token parsing and validation
+
+### Backend Endpoints Used
+- `POST /register` - User registration (username, password, role)
+- `POST /login` - User authentication (returns JWT token)
+- `POST /addbook` - Add new book (Admin only, requires `ROLE_ADMIN`)
+- `PUT /book/{id}` - Update book (Admin only, requires `ROLE_ADMIN`)
+- `DELETE /book/{id}` - Delete book (Admin only, requires `ROLE_ADMIN`)
+
+### Technical Implementation
+- Authentication uses JWT tokens stored in localStorage
+- Admin role is validated on both frontend (UI) and backend (API endpoints)
+- All book management operations require admin authentication
+- Protected routes show loading state while checking authentication
+- Context provider wraps entire app for global auth state access
+
+### Security Notes
+- JWT tokens include expiration time and are automatically cleared when expired
+- Role information extracted from JWT payload (`ROLE_ADMIN`)
+- Admin-only routes protected with `ProtectedRoute` component
+- Backend endpoints enforce role-based access control with `@PreAuthorize`
+
+## [Previous] - Unreleased
 
 ### Added
 - Created Header component with Book Forum branding and theme toggle (light/dark mode)
