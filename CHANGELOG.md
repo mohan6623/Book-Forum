@@ -69,7 +69,18 @@ All notable changes to this project will be documented in this file.
 - Updated `src/components/Header.tsx` to use UserProfileMenu, removed theme button
 - Updated `src/pages/Index.tsx` filter logic to handle authors and simplified rating filter
 
-## [Latest] - BookDetails Page Enhancements
+## [Latest] - BookDetails Layout Improvements
+
+### Changed
+- Moved Rating Distribution below book image in left column for better layout
+- Reduced book image aspect ratio from 3:4 to 2:3 for more compact display
+- Changed overall rating label format to "avg | totalRatings" (e.g., "3.5 | 322")
+- Removed container max-width constraints for full-width utilization
+- Removed redundant category badge, ratings count, and comments count below author name
+- Removed separator line between book info and rating sections
+- Rating Distribution now sits in same column as book image for space efficiency
+
+## [Previous] - BookDetails Page Enhancements
 
 ### Added
 - User profile menu in BookDetails page header for consistency

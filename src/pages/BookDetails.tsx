@@ -199,12 +199,12 @@ const BookDetails = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Book Image */}
-          <div className="lg:col-span-1">
-            <Card className="overflow-hidden sticky top-24">
-              <div className="relative aspect-[3/4] bg-muted">
+      <main className="w-full px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          {/* Left Column - Book Image & Rating Distribution */}
+          <div className="lg:col-span-1 space-y-4">
+            <Card className="overflow-hidden">
+              <div className="relative aspect-[2/3] bg-muted">
                 <img
                   src={book.image}
                   alt={book.title}
@@ -220,11 +220,43 @@ const BookDetails = () => {
                 <div className="absolute bottom-3 left-3 flex items-center gap-1 px-3 py-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg border border-border/50">
                   <Star className="h-5 w-5 fill-secondary text-secondary" />
                   <span className="text-lg font-bold text-foreground">
-                    {book.rating.toFixed(1)}
+                    {book.rating.toFixed(1)} | {totalRatings}
                   </span>
-                  <span className="text-sm text-muted-foreground">/ 5</span>
                 </div>
               </div>
+            </Card>
+
+            {/* Ratings Breakdown */}
+            <Card className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  Rating Distribution
+                </h3>
+              </div>
+
+              {totalRatings > 0 ? (
+                <div className="space-y-2">
+                  {ratingPercentages.map(({ stars, count, percentage }) => (
+                    <div key={stars} className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 w-16">
+                        <span className="text-xs font-medium">{stars}</span>
+                        <Star className="h-3 w-3 fill-secondary text-secondary" />
+                      </div>
+                      <div className="flex-1">
+                        <Progress value={percentage} className="h-1.5" />
+                      </div>
+                      <span className="text-xs text-muted-foreground w-14 text-right">
+                        {count} ({percentage.toFixed(0)}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4 text-sm">
+                  No ratings yet. Be the first to rate this book!
+                </p>
+              )}
             </Card>
           </div>
 
@@ -239,23 +271,6 @@ const BookDetails = () => {
                 <p className="text-lg text-muted-foreground">by {book.author}</p>
               </div>
 
-              <div className="flex items-center gap-4 flex-wrap">
-                <Badge variant="outline" className="text-sm">
-                  {book.category}
-                </Badge>
-                {totalRatings > 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    {totalRatings} {totalRatings === 1 ? "rating" : "ratings"}
-                  </span>
-                )}
-                {commentsData?.totalElements ? (
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4" />
-                    {commentsData.totalElements}{" "}
-                    {commentsData.totalElements === 1 ? "comment" : "comments"}
-                  </span>
-                ) : null}
-              </div>
 
               {/* Book Description */}
               {book.description && (
@@ -267,8 +282,6 @@ const BookDetails = () => {
                 </div>
               )}
             </div>
-
-            <Separator />
 
             {/* Rate This Book */}
             <Card className="p-6 relative">
@@ -307,39 +320,6 @@ const BookDetails = () => {
                   </button>
                 ))}
               </div>
-            </Card>
-
-            {/* Ratings Breakdown */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">
-                  Rating Distribution
-                </h3>
-              </div>
-
-              {totalRatings > 0 ? (
-                <div className="space-y-2">
-                  {ratingPercentages.map(({ stars, count, percentage }) => (
-                    <div key={stars} className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 w-16">
-                        <span className="text-xs font-medium">{stars}</span>
-                        <Star className="h-3 w-3 fill-secondary text-secondary" />
-                      </div>
-                      <div className="flex-1">
-                        <Progress value={percentage} className="h-1.5" />
-                      </div>
-                      <span className="text-xs text-muted-foreground w-14 text-right">
-                        {count} ({percentage.toFixed(0)}%)
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-4 text-sm">
-                  No ratings yet. Be the first to rate this book!
-                </p>
-              )}
             </Card>
 
             {/* Comments Section */}
