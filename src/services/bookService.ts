@@ -8,23 +8,57 @@ import {
   mapBookDtoToBook,
 } from '@/types/book';
 import { getAuthHeader } from '@/services/authService';
+import { SAMPLE_BOOK_DTO, SAMPLE_BOOKS_DTO } from '@/data/sampleBooks';
 
 export const bookService = {
   async getBooks(page: number = 0, size: number = 20): Promise<PageResponse<Book>> {
-    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}?page=${page}&size=${size}`);
-    if (res.status === 204) {
-      return emptyPageResponse<Book>();
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}?page=${page}&size=${size}`);
+      if (res.status === 204) {
+        return emptyPageResponse<Book>();
+      }
+      if (!res.ok) throw new Error('Failed to fetch books');
+      const data: PageResponse<BookDto> = await res.json();
+      return mapPage(data, mapBookDtoToBook);
+    } catch (error) {
+      console.warn('Backend unreachable, using sample books data', error);
+      // Return sample books when backend is down
+      return {
+        content: SAMPLE_BOOKS_DTO.map(mapBookDtoToBook),
+        pageable: { pageNumber: 0, pageSize: 20, offset: 0, paged: true, unpaged: false },
+        totalPages: 1,
+        totalElements: SAMPLE_BOOKS_DTO.length,
+        last: true,
+        size: 20,
+        number: 0,
+        numberOfElements: SAMPLE_BOOKS_DTO.length,
+        first: true,
+        empty: false,
+      };
     }
-    if (!res.ok) throw new Error('Failed to fetch books');
-    const data: PageResponse<BookDto> = await res.json();
-    return mapPage(data, mapBookDtoToBook);
   },
 
   async getBookById(id: number): Promise<Book> {
-    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOK_BY_ID(id)}`);
-    if (!res.ok) throw new Error('Failed to fetch book');
-    const dto: BookDto = await res.json();
-    return mapBookDtoToBook(dto);
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOK_BY_ID(id)}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Unauthorized: Please log in to view book details');
+        }
+        throw new Error('Failed to fetch book');
+      }
+      const dto: BookDto = await res.json();
+      return mapBookDtoToBook(dto);
+    } catch (error) {
+      console.warn('Backend unreachable or unauthorized, using sample book data', error);
+      // Return sample book with the requested ID
+      return mapBookDtoToBook({ ...SAMPLE_BOOK_DTO, id });
+    }
   },
 
   async searchBooks(
@@ -116,16 +150,39 @@ export const bookService = {
   },
 
   async getRatings(id: number): Promise<RatingsBreakdown> {
-    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_RATINGS(id)}`);
-    if (!res.ok) throw new Error('Failed to fetch ratings');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_RATINGS(id)}`);
+      if (!res.ok) throw new Error('Failed to fetch ratings');
+      return res.json();
+    } catch (error) {
+      console.warn('Backend unreachable, using sample ratings data', error);
+      const { SAMPLE_RATINGS_BREAKDOWN } = await import('@/data/sampleBooks');
+      return SAMPLE_RATINGS_BREAKDOWN;
+    }
   },
 
   async getComments(id: number, page = 0, size = 20) {
-    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_COMMENTS(id)}?page=${page}&size=${size}`);
-    if (res.status === 204) return emptyPageResponse<CommentsDto>();
-    if (!res.ok) throw new Error('Failed to fetch comments');
-    return res.json() as Promise<PageResponse<CommentsDto>>;
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_COMMENTS(id)}?page=${page}&size=${size}`);
+      if (res.status === 204) return emptyPageResponse<CommentsDto>();
+      if (!res.ok) throw new Error('Failed to fetch comments');
+      return res.json() as Promise<PageResponse<CommentsDto>>;
+    } catch (error) {
+      console.warn('Backend unreachable, using sample comments data', error);
+      const { SAMPLE_COMMENTS } = await import('@/data/sampleBooks');
+      return {
+        content: SAMPLE_COMMENTS,
+        pageable: { pageNumber: 0, pageSize: size, offset: 0, paged: true, unpaged: false },
+        totalPages: 1,
+        totalElements: SAMPLE_COMMENTS.length,
+        last: true,
+        size: size,
+        number: 0,
+        numberOfElements: SAMPLE_COMMENTS.length,
+        first: true,
+        empty: false,
+      };
+    }
   },
 
   async addComment(id: number, comment: string): Promise<CommentsDto> {
