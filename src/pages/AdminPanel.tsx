@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -6,21 +6,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, BookPlus, BookOpen } from 'lucide-react';
+import { Loader2, Plus, Eye, Pencil, Trash2, BookOpen, BarChart3, Users } from 'lucide-react';
 import { bookService } from '@/services/bookService';
-import { BookDto } from '@/types/book';
+import { Book, BookDto } from '@/types/book';
 
 const AdminPanel = () => {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
-  // Add Book State
+  // Form states
   const [newBook, setNewBook] = useState<Partial<BookDto>>({
     title: '',
     author: '',
@@ -29,23 +37,49 @@ const AdminPanel = () => {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  // Update Book State
-  const [updateBookId, setUpdateBookId] = useState('');
-  const [updateBook, setUpdateBook] = useState<Partial<BookDto>>({
-    title: '',
-    author: '',
-    description: '',
-    category: '',
-  });
-  const [updateImageFile, setUpdateImageFile] = useState<File | null>(null);
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/');
+    } else {
+      loadBooks();
+    }
+  }, [isAdmin, navigate]);
 
-  // Delete Book State
-  const [deleteBookId, setDeleteBookId] = useState('');
+  useEffect(() => {
+    filterBooks();
+  }, [searchQuery, categoryFilter, books]);
 
-  if (!isAdmin) {
-    navigate('/');
-    return null;
-  }
+  const loadBooks = async () => {
+    try {
+      const response = await bookService.getBooks(0, 100);
+      setBooks(response.content);
+      setFilteredBooks(response.content);
+    } catch (error) {
+      toast({
+        title: 'Failed to load books',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const filterBooks = () => {
+    let filtered = books;
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (book) =>
+          book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          book.author.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (categoryFilter && categoryFilter !== 'all') {
+      filtered = filtered.filter((book) => book.category === categoryFilter);
+    }
+
+    setFilteredBooks(filtered);
+  };
 
   const handleAddBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,9 +101,8 @@ const AdminPanel = () => {
       });
       setNewBook({ title: '', author: '', description: '', category: '' });
       setImageFile(null);
-      // Reset file input
-      const fileInput = document.getElementById('add-book-image') as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
+      setAddDialogOpen(false);
+      loadBooks();
     } catch (error) {
       toast({
         title: 'Failed to add book',
@@ -83,31 +116,24 @@ const AdminPanel = () => {
 
   const handleUpdateBook = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!updateBookId) {
-      toast({
-        title: 'Book ID required',
-        description: 'Please enter a book ID.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!selectedBook) return;
 
     setLoading(true);
     try {
-      await bookService.updateBook(Number(updateBookId), updateBook, updateImageFile || undefined);
+      await bookService.updateBook(selectedBook.id, newBook, imageFile || undefined);
       toast({
         title: 'Success!',
         description: 'Book updated successfully.',
       });
-      setUpdateBookId('');
-      setUpdateBook({ title: '', author: '', description: '', category: '' });
-      setUpdateImageFile(null);
-      const fileInput = document.getElementById('update-book-image') as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
+      setEditDialogOpen(false);
+      setSelectedBook(null);
+      setNewBook({ title: '', author: '', description: '', category: '' });
+      setImageFile(null);
+      loadBooks();
     } catch (error) {
       toast({
         title: 'Failed to update book',
-        description: 'Please check the book ID and try again.',
+        description: 'Please try again later.',
         variant: 'destructive',
       });
     } finally {
@@ -115,29 +141,21 @@ const AdminPanel = () => {
     }
   };
 
-  const handleDeleteBook = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!deleteBookId) {
-      toast({
-        title: 'Book ID required',
-        description: 'Please enter a book ID.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const handleDeleteBook = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this book?')) return;
 
     setLoading(true);
     try {
-      await bookService.deleteBook(Number(deleteBookId));
+      await bookService.deleteBook(id);
       toast({
         title: 'Success!',
         description: 'Book deleted successfully.',
       });
-      setDeleteBookId('');
+      loadBooks();
     } catch (error) {
       toast({
         title: 'Failed to delete book',
-        description: 'Please check the book ID and try again.',
+        description: 'Please try again later.',
         variant: 'destructive',
       });
     } finally {
@@ -145,250 +163,318 @@ const AdminPanel = () => {
     }
   };
 
+  const openEditDialog = (book: Book) => {
+    setSelectedBook(book);
+    setNewBook({
+      title: book.title,
+      author: book.author,
+      description: book.description,
+      category: book.category,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const categories = Array.from(new Set(books.map((b) => b.category)));
+  const uniqueAuthors = new Set(books.map((b) => b.author)).size;
+
+  if (!isAdmin) return null;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
-          <p className="text-muted-foreground">Manage books and content</p>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header Section */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Admin Panel</h1>
+            <p className="text-muted-foreground">Manage your book library</p>
+          </div>
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="gap-2">
+                <Plus className="h-5 w-5" />
+                Add New Book
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Book</DialogTitle>
+                <DialogDescription>Fill in the details to add a new book</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddBook} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="add-title">Title *</Label>
+                  <Input
+                    id="add-title"
+                    value={newBook.title}
+                    onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="add-author">Author *</Label>
+                  <Input
+                    id="add-author"
+                    value={newBook.author}
+                    onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="add-category">Category *</Label>
+                  <Select
+                    value={newBook.category}
+                    onValueChange={(value) => setNewBook({ ...newBook, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Fiction">Fiction</SelectItem>
+                      <SelectItem value="Non-Fiction">Non-Fiction</SelectItem>
+                      <SelectItem value="Science">Science</SelectItem>
+                      <SelectItem value="History">History</SelectItem>
+                      <SelectItem value="Biography">Biography</SelectItem>
+                      <SelectItem value="Fantasy">Fantasy</SelectItem>
+                      <SelectItem value="Mystery">Mystery</SelectItem>
+                      <SelectItem value="Romance">Romance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="add-description">Description</Label>
+                  <Textarea
+                    id="add-description"
+                    value={newBook.description}
+                    onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="add-image">Book Image *</Label>
+                  <Input
+                    id="add-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Book'
+                  )}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <Tabs defaultValue="add" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="add" className="gap-2">
-              <BookPlus className="h-4 w-4" />
-              Add Book
-            </TabsTrigger>
-            <TabsTrigger value="update" className="gap-2">
-              <BookOpen className="h-4 w-4" />
-              Update Book
-            </TabsTrigger>
-            <TabsTrigger value="delete" className="gap-2">
-              <BookOpen className="h-4 w-4" />
-              Delete Book
-            </TabsTrigger>
-          </TabsList>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Books</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{books.length}</div>
+              <p className="text-xs text-muted-foreground">Books in library</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Categories</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{categories.length}</div>
+              <p className="text-xs text-muted-foreground">Different categories</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Authors</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{uniqueAuthors}</div>
+              <p className="text-xs text-muted-foreground">Unique authors</p>
+            </CardContent>
+          </Card>
+        </div>
 
-          <TabsContent value="add">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Book</CardTitle>
-                <CardDescription>Fill in the details to add a new book to the collection</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleAddBook} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="add-title">Title *</Label>
-                    <Input
-                      id="add-title"
-                      value={newBook.title}
-                      onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-author">Author *</Label>
-                    <Input
-                      id="add-author"
-                      value={newBook.author}
-                      onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-category">Category *</Label>
-                    <Select
-                      value={newBook.category}
-                      onValueChange={(value) => setNewBook({ ...newBook, category: value })}
-                      disabled={loading}
-                    >
-                      <SelectTrigger id="add-category">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Fiction">Fiction</SelectItem>
-                        <SelectItem value="Non-Fiction">Non-Fiction</SelectItem>
-                        <SelectItem value="Science">Science</SelectItem>
-                        <SelectItem value="History">History</SelectItem>
-                        <SelectItem value="Biography">Biography</SelectItem>
-                        <SelectItem value="Fantasy">Fantasy</SelectItem>
-                        <SelectItem value="Mystery">Mystery</SelectItem>
-                        <SelectItem value="Romance">Romance</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-description">Description</Label>
-                    <Textarea
-                      id="add-description"
-                      value={newBook.description}
-                      onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
-                      rows={4}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-book-image">Book Image *</Label>
-                    <Input
-                      id="add-book-image"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding Book...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Add Book
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        {/* Search and Filter */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search by title or author..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="update">
-            <Card>
-              <CardHeader>
-                <CardTitle>Update Book</CardTitle>
-                <CardDescription>Enter the book ID and update the fields you want to change</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleUpdateBook} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="update-book-id">Book ID *</Label>
-                    <Input
-                      id="update-book-id"
-                      type="number"
-                      value={updateBookId}
-                      onChange={(e) => setUpdateBookId(e.target.value)}
-                      required
-                      disabled={loading}
-                      placeholder="Enter book ID"
+        {/* Books List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Manage Books</CardTitle>
+            <CardDescription>View, edit, and delete books in your library</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {filteredBooks.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No books found</p>
+              ) : (
+                filteredBooks.map((book) => (
+                  <div
+                    key={book.id}
+                    className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <img
+                      src={`data:image/jpeg;base64,${book.image}`}
+                      alt={book.title}
+                      className="w-16 h-20 object-cover rounded"
                     />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg truncate">{book.title}</h3>
+                      <p className="text-sm text-muted-foreground">by {book.author}</p>
+                      <Badge variant="secondary" className="mt-1">
+                        {book.category}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate(`/book/${book.id}`)}
+                        title="View"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(book)}
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteBook(book.id)}
+                        title="Delete"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="update-title">Title</Label>
-                    <Input
-                      id="update-title"
-                      value={updateBook.title}
-                      onChange={(e) => setUpdateBook({ ...updateBook, title: e.target.value })}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="update-author">Author</Label>
-                    <Input
-                      id="update-author"
-                      value={updateBook.author}
-                      onChange={(e) => setUpdateBook({ ...updateBook, author: e.target.value })}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="update-category">Category</Label>
-                    <Select
-                      value={updateBook.category}
-                      onValueChange={(value) => setUpdateBook({ ...updateBook, category: value })}
-                      disabled={loading}
-                    >
-                      <SelectTrigger id="update-category">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Fiction">Fiction</SelectItem>
-                        <SelectItem value="Non-Fiction">Non-Fiction</SelectItem>
-                        <SelectItem value="Science">Science</SelectItem>
-                        <SelectItem value="History">History</SelectItem>
-                        <SelectItem value="Biography">Biography</SelectItem>
-                        <SelectItem value="Fantasy">Fantasy</SelectItem>
-                        <SelectItem value="Mystery">Mystery</SelectItem>
-                        <SelectItem value="Romance">Romance</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="update-description">Description</Label>
-                    <Textarea
-                      id="update-description"
-                      value={updateBook.description}
-                      onChange={(e) => setUpdateBook({ ...updateBook, description: e.target.value })}
-                      rows={4}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="update-book-image">Book Image (optional)</Label>
-                    <Input
-                      id="update-book-image"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setUpdateImageFile(e.target.files?.[0] || null)}
-                      disabled={loading}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Updating Book...
-                      </>
-                    ) : (
-                      'Update Book'
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="delete">
-            <Card>
-              <CardHeader>
-                <CardTitle>Delete Book</CardTitle>
-                <CardDescription>Enter the book ID to permanently delete it from the collection</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleDeleteBook} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="delete-book-id">Book ID *</Label>
-                    <Input
-                      id="delete-book-id"
-                      type="number"
-                      value={deleteBookId}
-                      onChange={(e) => setDeleteBookId(e.target.value)}
-                      required
-                      disabled={loading}
-                      placeholder="Enter book ID to delete"
-                    />
-                  </div>
-                  <Button type="submit" variant="destructive" className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Deleting Book...
-                      </>
-                    ) : (
-                      'Delete Book'
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Book</DialogTitle>
+              <DialogDescription>Update book information</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateBook} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Title</Label>
+                <Input
+                  id="edit-title"
+                  value={newBook.title}
+                  onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-author">Author</Label>
+                <Input
+                  id="edit-author"
+                  value={newBook.author}
+                  onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-category">Category</Label>
+                <Select
+                  value={newBook.category}
+                  onValueChange={(value) => setNewBook({ ...newBook, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Fiction">Fiction</SelectItem>
+                    <SelectItem value="Non-Fiction">Non-Fiction</SelectItem>
+                    <SelectItem value="Science">Science</SelectItem>
+                    <SelectItem value="History">History</SelectItem>
+                    <SelectItem value="Biography">Biography</SelectItem>
+                    <SelectItem value="Fantasy">Fantasy</SelectItem>
+                    <SelectItem value="Mystery">Mystery</SelectItem>
+                    <SelectItem value="Romance">Romance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={newBook.description}
+                  onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
+                  rows={4}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-image">Book Image (optional)</Label>
+                <Input
+                  id="edit-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Book'
+                )}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -6,6 +6,8 @@ export type JwtResponse = {
     id?: number;
     username: string;
     role?: string;
+    email?: string;
+    imageData?: string;
   };
 };
 

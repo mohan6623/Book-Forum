@@ -2,6 +2,66 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Latest] - 2025-10-21
+
+### Added
+- **Admin Panel Redesign**: Complete redesign with modern dashboard layout
+  - Added stats cards showing Total Books, Categories, and Authors with icons
+  - Implemented search and filter functionality for books
+  - Book list now displays in horizontal layout with inline action buttons
+  - Added dialogs for adding and editing books (cleaner UX)
+  - View, Edit, and Delete buttons directly on each book item
+  - Search bar filters by title and author in real-time
+  - Category dropdown filter
+  - "Add New Book" button prominently displayed in header
+- **User Profile Page**: New page for users to manage their profile at `/profile`
+  - View and update email address
+  - Change password functionality with confirmation
+  - Upload/update profile picture with live preview
+  - Accessible from user menu dropdown via "Profile" link
+  - Protected route requiring authentication
+- **Fixed Rating and Comment Endpoints**: Corrected API endpoint paths to match backend
+  - Rating endpoint: `/rating/{id}` (was `/book/{id}/rating`)
+  - Comment endpoint: `/comment/{id}` (was `/book/{id}/comment`)
+  - Update comment endpoint: `/comment/{id}` (was `/book/{id}/comment`)
+  - These corrections fix the "not sending request to backend" issue
+- **User Service**: New service for user profile management (`src/services/userService.ts`)
+  - Update user details including email and password
+  - Profile picture upload support with multipart form data
+  - Proper authentication headers included
+
+### Changed
+- **API Configuration**: Updated endpoint paths in `src/config/api.ts` to match backend controller
+  - `ADD_RATING`: `/rating/{id}`
+  - `ADD_COMMENT`: `/comment/{id}`
+  - `UPDATE_COMMENT`: `/comment/{id}`
+  - Added `UPDATE_USER`: `/user/{userId}`
+- **Admin Panel**: Removed tab-based interface in favor of unified list view
+  - More efficient workflow for managing books
+  - Inline actions reduce clicks needed
+  - Better use of screen space
+- **User Menu**: Added "Profile" option that navigates to profile page
+- **Auth Types**: Extended user type to include `email` and `imageData` fields
+
+### Technical Changes
+- Created `src/services/userService.ts` for user-related API calls
+- Created `src/pages/UserProfile.tsx` for user profile management
+- Completely rewrote `src/pages/AdminPanel.tsx` with new dashboard layout
+- Updated routing in `src/App.tsx` to include `/profile` protected route
+- Enhanced `UserProfileMenu.tsx` with profile navigation
+- Updated `JwtResponse` type to include email and imageData fields
+
+### Backend Endpoints Used
+- `PUT /user/{user_id}` - Update user profile with multipart form (requires authentication)
+- `POST /rating/{id}` - Add book rating (requires authentication)
+- `POST /comment/{id}` - Add book comment (requires authentication)
+- `PUT /comment/{id}` - Update book comment (requires authentication)
+- `DELETE /comment/{commentId}` - Delete book comment (requires authentication)
+- `GET /books` - Fetch books with pagination
+- `POST /addbook` - Add new book (requires ROLE_ADMIN)
+- `PUT /book/{id}` - Update book (requires ROLE_ADMIN)
+- `DELETE /book/{id}` - Delete book (requires ROLE_ADMIN)
+
 ## [2025-01-XX] - Authentication & Authorization System
 
 ### Added
