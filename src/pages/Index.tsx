@@ -73,11 +73,11 @@ const Index = () => {
       />
       
       {/* Hero Section */}
-      <header className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
+  <header className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,hsl(var(--secondary)/0.08),transparent_50%)]" />
         
-        <div className="relative container mx-auto px-4 py-16 sm:py-24">
+  <div className="relative container mx-auto px-2 sm:px-3 py-16 sm:py-24">
           <div className="text-center space-y-6 mb-12">
             <div className="flex items-center justify-center gap-3 animate-fade-in">
               <BookIcon className="h-10 w-10 sm:h-12 sm:w-12 text-primary animate-float" />
@@ -106,7 +106,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
+  <main className="container mx-auto px-2 sm:px-3 py-12">
         {/* Results Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>

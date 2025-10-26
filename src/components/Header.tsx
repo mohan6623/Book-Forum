@@ -1,4 +1,5 @@
 import { BookIcon } from "lucide-react";
+import { ReactNode } from "react";
 import SearchBar from "./SearchBar";
 import UserProfileMenu from "./UserProfileMenu";
 
@@ -7,17 +8,24 @@ interface HeaderProps {
   searchQuery?: string;
   onSearchChange?: (value: string) => void;
   onFilterToggle?: () => void;
+  leftContent?: ReactNode; // optional slot to override left side (e.g., back button)
 }
 
-const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle }: HeaderProps) => {
+const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftContent }: HeaderProps) => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div className="w-full px-2 sm:px-3 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 shrink-0">
-          <BookIcon className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent">
-            Book Forum
-          </h1>
+          {leftContent ? (
+            leftContent
+          ) : (
+            <>
+              <BookIcon className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-bold bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent">
+                Book Forum
+              </h1>
+            </>
+          )}
         </div>
 
         <div 

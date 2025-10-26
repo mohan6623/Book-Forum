@@ -53,13 +53,26 @@ const UserProfile = () => {
       return;
     }
 
+    // Defensive: ensure we have a valid user id before attempting update
+    const userId = user?.id;
+    if (!userId || userId === 0) {
+      toast({
+        title: 'Unable to update profile',
+        description: 'Missing user id. Please re-login or contact support.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       await userService.updateUser(
-        user?.id || 0,
+        userId,
         {
           username: user?.username || '',
           email: email || user?.email,
+          // include password only if user provided a new one
+          ...(newPassword ? { password: newPassword } : {}),
         },
         imageFile || undefined
       );

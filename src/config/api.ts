@@ -9,11 +9,13 @@ export const API_ENDPOINTS = {
   ADD_BOOK: '/addbook',
   UPDATE_BOOK: (id: number) => `/book/${id}`,
   DELETE_BOOK: (id: number) => `/book/${id}`,
-  ADD_RATING: (id: number) => `/rating/${id}`,
+  // Backend exposes rating under the book resource: POST /book/{id}/rating
+  ADD_RATING: (id: number) => `/book/${id}/rating`,
   GET_RATINGS: (id: number) => `/book/${id}/ratings`,
   GET_COMMENTS: (id: number) => `/book/${id}/comment`,
-  ADD_COMMENT: (id: number) => `/comment/${id}`,
-  UPDATE_COMMENT: (id: number) => `/comment/${id}`,
+  // Comments are nested under the book resource in the backend
+  ADD_COMMENT: (id: number) => `/book/${id}/comment`,
+  UPDATE_COMMENT: (id: number) => `/book/${id}/comment`,
   DELETE_COMMENT: (commentId: number) => `/comment/${commentId}`,
   UPDATE_USER: (userId: number) => `/user/${userId}`,
 } as const;

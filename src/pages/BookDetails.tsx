@@ -11,17 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import UserProfileMenu from "@/components/UserProfileMenu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import Header from "@/components/Header";
+// Rating dialog removed – direct click to rate/update
 
 const categoryColors: Record<string, string> = {
   fiction: "bg-category-fiction",
@@ -38,11 +29,10 @@ const BookDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [newComment, setNewComment] = useState("");
   const [userRating, setUserRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [currentCommentPage, setCurrentCommentPage] = useState(0);
 
   const bookId = parseInt(id || "0");
@@ -68,23 +58,36 @@ const BookDetails = () => {
     enabled: bookId > 0,
   });
 
-  // Add rating mutation
+  // Persist and update a user's rating per book in localStorage to reflect prior choice on the client
+  const ratingKey = `user_rating_${bookId}_${user?.id ?? user?.username ?? 'guest'}`;
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const saved = localStorage.getItem(ratingKey);
+    if (saved) {
+      const r = Number(saved);
+      if (!isNaN(r)) setUserRating(r);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ratingKey, isAuthenticated]);
+
+  // Add or update rating mutation (backend should upsert). We short-circuit if clicking the same star again.
   const addRatingMutation = useMutation({
     mutationFn: (rating: number) => bookService.addRating(bookId, rating),
-    onSuccess: () => {
+    onSuccess: (_data, rating) => {
       queryClient.invalidateQueries({ queryKey: ["book", bookId] });
       queryClient.invalidateQueries({ queryKey: ["ratings", bookId] });
+      setUserRating(rating);
+      try { localStorage.setItem(ratingKey, String(rating)); } catch {}
       toast({
-        title: "Rating submitted!",
-        description: "Thank you for rating this book.",
+        title: "Rating saved",
+        description: "You can update it anytime by clicking a different star.",
       });
-      setShowRatingDialog(false);
-      setUserRating(0);
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to submit rating. Please try again.",
+        description: "Failed to save rating. Please try again.",
         variant: "destructive",
       });
     },
@@ -123,10 +126,18 @@ const BookDetails = () => {
     },
   });
 
-  const handleSubmitRating = () => {
-    if (userRating > 0) {
-      addRatingMutation.mutate(userRating);
+  const handleStarClick = (rating: number) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to rate this book.",
+        variant: "destructive",
+      });
+      return;
     }
+    // If selecting the same rating again, do nothing to avoid duplicate posts
+    if (rating === userRating) return;
+    addRatingMutation.mutate(rating);
   };
 
   const handleSubmitComment = () => {
@@ -183,9 +194,9 @@ const BookDetails = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      {/* Consistent global header with Back button replacing brand */}
+      <Header
+        leftContent={
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
@@ -194,12 +205,13 @@ const BookDetails = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Books
           </Button>
-          <UserProfileMenu />
-        </div>
-      </header>
+        }
+      />
 
       {/* Main Content */}
-      <main className="w-full px-4 py-8">
+      <main className="w-full px-2 sm:px-3 py-8">
+        {/* Back button moved into header via leftContent; remove spacer */}
+        <div className="mb-2" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {/* Left Column - Book Image & Rating Distribution */}
           <div className="lg:col-span-1 space-y-4">
@@ -299,16 +311,12 @@ const BookDetails = () => {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
-                    onClick={() => {
-                      if (isAuthenticated) {
-                        setUserRating(star);
-                        setShowRatingDialog(true);
-                      }
-                    }}
+                    onClick={() => handleStarClick(star)}
                     onMouseEnter={() => isAuthenticated && setHoveredRating(star)}
                     onMouseLeave={() => setHoveredRating(0)}
                     className="transition-transform hover:scale-110"
-                    disabled={!isAuthenticated}
+                    disabled={!isAuthenticated || addRatingMutation.isPending}
+                    aria-label={`Rate ${star} star${star>1?'s':''}`}
                   >
                     <Star
                       className={`h-8 w-8 transition-colors ${
@@ -440,26 +448,7 @@ const BookDetails = () => {
         </div>
       </main>
 
-      {/* Rating Confirmation Dialog */}
-      <AlertDialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Rate this book</AlertDialogTitle>
-            <AlertDialogDescription>
-              You're about to rate "{book.title}" with {userRating} star
-              {userRating !== 1 ? "s" : ""}. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setUserRating(0)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmitRating}>
-              Submit Rating
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* No dialog – clicking a star saves/updates the rating */}
     </div>
   );
 };
