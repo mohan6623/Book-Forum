@@ -5,8 +5,10 @@ export type JwtResponse = {
   user: {
     id?: number;
     username: string;
+    name?: string;
     role?: string;
     email?: string;
+    imageBase64?: string; // Backend sends imageBase64
     imageData?: string;
   };
 };

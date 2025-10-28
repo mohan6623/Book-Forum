@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, ArrowLeft, MessageSquare, TrendingUp, User, Clock, LogIn } from "lucide-react";
+import { Star, ArrowLeft, MessageSquare, TrendingUp, User, Clock, LogIn, Edit2, Trash2, X, Check } from "lucide-react";
 import { bookService } from "@/services/bookService";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
@@ -34,6 +36,8 @@ const BookDetails = () => {
   const [userRating, setUserRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [currentCommentPage, setCurrentCommentPage] = useState(0);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editedCommentText, setEditedCommentText] = useState("");
 
   const bookId = parseInt(id || "0");
 
@@ -126,6 +130,36 @@ const BookDetails = () => {
     },
   });
 
+  // Update comment mutation
+  const updateCommentMutation = useMutation({
+    mutationFn: ({ commentId, comment }: { commentId: number; comment: string }) => {
+      const commentDto = {
+        id: commentId,
+        comment: comment,
+        bookId: bookId,
+        username: user?.username || "",
+        createdAt: new Date().toISOString(),
+      };
+      return bookService.updateComment(commentId, commentDto);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", bookId, currentCommentPage] });
+      setEditingCommentId(null);
+      setEditedCommentText("");
+      toast({
+        title: "Comment updated",
+        description: "Your comment has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update comment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleStarClick = (rating: number) => {
     if (!isAuthenticated) {
       toast({
@@ -152,6 +186,60 @@ const BookDetails = () => {
     }
   };
 
+  const handleEditComment = (commentId: number, currentText: string) => {
+    setEditingCommentId(commentId);
+    setEditedCommentText(currentText);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditedCommentText("");
+  };
+
+  const handleSaveEdit = (commentId: number) => {
+    if (editedCommentText.trim()) {
+      updateCommentMutation.mutate({
+        commentId,
+        comment: editedCommentText.trim(),
+      });
+    }
+  };
+
+  const handleDeleteComment = (commentId: number) => {
+    if (window.confirm("Are you sure you want to delete this comment?")) {
+      deleteCommentMutation.mutate(commentId);
+    }
+  };
+
+  // Format relative time (e.g., "2 minutes ago", "3 hours ago")
+  const getRelativeTime = (dateString: string): string => {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return "just now";
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+    } else if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} ${days === 1 ? "day" : "days"} ago`;
+    } else if (diffInSeconds < 2592000) {
+      const weeks = Math.floor(diffInSeconds / 604800);
+      return `${weeks} ${weeks === 1 ? "week" : "weeks"} ago`;
+    } else if (diffInSeconds < 31536000) {
+      const months = Math.floor(diffInSeconds / 2592000);
+      return `${months} ${months === 1 ? "month" : "months"} ago`;
+    } else {
+      const years = Math.floor(diffInSeconds / 31536000);
+      return `${years} ${years === 1 ? "year" : "years"} ago`;
+    }
+  };
+
   // Calculate rating statistics
   const totalRatings = ratingsBreakdown
     ? Object.values(ratingsBreakdown).reduce((sum, count) => sum + count, 0)
@@ -172,11 +260,57 @@ const BookDetails = () => {
 
   if (bookLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-4">Loading book details...</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <Header
+          leftContent={
+            <Button variant="ghost" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Books
+            </Button>
+          }
+        />
+        <main className="w-full px-2 sm:px-3 py-8">
+          <div className="mb-2" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Left Column Skeleton */}
+            <div className="lg:col-span-1 space-y-4">
+              <Skeleton className="aspect-[2/3] w-full" />
+              <Card className="p-4">
+                <Skeleton className="h-6 w-40 mb-4" />
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-2 flex-1" />
+                      <Skeleton className="h-4 w-14" />
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+            {/* Right Column Skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="space-y-4">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+              <Card className="p-6">
+                <Skeleton className="h-6 w-32 mb-3" />
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-8 w-8 rounded-full" />
+                  ))}
+                </div>
+              </Card>
+              <Card className="p-6">
+                <Skeleton className="h-8 w-40 mb-6" />
+                <Skeleton className="h-32 w-full mb-3" />
+                <Skeleton className="h-10 w-32 ml-auto" />
+              </Card>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -369,49 +503,122 @@ const BookDetails = () => {
 
               {/* Comments List */}
               {commentsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-muted-foreground mt-2">Loading comments...</p>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 rounded-lg border border-border bg-card">
+                      <div className="flex items-start gap-2 mb-2">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-24 mb-1" />
+                          <Skeleton className="h-3 w-32" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-16 w-full ml-10" />
+                    </div>
+                  ))}
                 </div>
               ) : commentsData?.content && commentsData.content.length > 0 ? (
                 <>
                   <div className="space-y-4">
-                    {commentsData.content.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="p-4 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                              <User className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-sm text-foreground">
-                                {comment.username}
-                              </p>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {new Date(comment.createdAt).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                    {commentsData.content.map((comment) => {
+                      const isOwner = isAuthenticated && user?.username === comment.username;
+                      const isEditing = editingCommentId === comment.id;
+                      
+                      return (
+                        <div
+                          key={comment.id}
+                          className="p-4 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="w-8 h-8">
+                                {comment.profilePic && (
+                                  <AvatarImage 
+                                    src={`data:image/jpeg;base64,${comment.profilePic}`}
+                                    alt={comment.username}
+                                  />
+                                )}
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                  {comment.username.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold text-sm text-foreground">
+                                  {comment.username}
+                                </p>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {getRelativeTime(comment.createdAt)}
+                                </div>
                               </div>
                             </div>
+                            
+                            {/* Edit and Delete buttons - only show for comment owner */}
+                            {isOwner && !isEditing && (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditComment(comment.id, comment.comment)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  disabled={deleteCommentMutation.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
+                          
+                          {/* Comment text or edit textarea */}
+                          {isEditing ? (
+                            <div className="pl-10 space-y-2">
+                              <Textarea
+                                value={editedCommentText}
+                                onChange={(e) => setEditedCommentText(e.target.value)}
+                                className="min-h-[80px]"
+                                autoFocus
+                              />
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveEdit(comment.id)}
+                                  disabled={!editedCommentText.trim() || updateCommentMutation.isPending}
+                                  className="gap-1"
+                                >
+                                  <Check className="h-4 w-4" />
+                                  {updateCommentMutation.isPending ? "Saving..." : "Save"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  className="gap-1"
+                                >
+                                  <X className="h-4 w-4" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-foreground whitespace-pre-wrap pl-10">
+                              {comment.comment}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-foreground whitespace-pre-wrap pl-10">
-                          {comment.comment}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Pagination */}
-                  {commentsData.totalPages > 1 && (
+                  {commentsData.page?.totalPages > 1 && (
                     <div className="flex items-center justify-center gap-2 mt-6">
                       <Button
                         variant="outline"
@@ -422,13 +629,13 @@ const BookDetails = () => {
                         Previous
                       </Button>
                       <span className="text-sm text-muted-foreground">
-                        Page {currentCommentPage + 1} of {commentsData.totalPages}
+                        Page {currentCommentPage + 1} of {commentsData.page.totalPages}
                       </span>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentCommentPage(prev => Math.min(commentsData.totalPages - 1, prev + 1))}
-                        disabled={currentCommentPage >= commentsData.totalPages - 1}
+                        onClick={() => setCurrentCommentPage(prev => Math.min(commentsData.page.totalPages - 1, prev + 1))}
+                        disabled={currentCommentPage >= commentsData.page.totalPages - 1}
                       >
                         Next
                       </Button>

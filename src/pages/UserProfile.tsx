@@ -76,6 +76,7 @@ const UserProfile = () => {
         },
         imageFile || undefined
       );
+      
       toast({
         title: 'Success!',
         description: 'Profile updated successfully.',

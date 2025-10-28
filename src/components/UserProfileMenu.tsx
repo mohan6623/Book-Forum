@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,9 @@ const UserProfileMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full">
           <Avatar className="h-8 w-8">
+            {isAuthenticated && user?.imageData && (
+              <AvatarImage src={user.imageData} alt={user.username} />
+            )}
             <AvatarFallback className="bg-primary/10 text-primary">
               <User className="h-4 w-4" />
             </AvatarFallback>

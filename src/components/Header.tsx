@@ -1,5 +1,6 @@
 import { BookIcon } from "lucide-react";
 import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import SearchBar from "./SearchBar";
 import UserProfileMenu from "./UserProfileMenu";
 
@@ -12,6 +13,8 @@ interface HeaderProps {
 }
 
 const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftContent }: HeaderProps) => {
+  const navigate = useNavigate();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="w-full px-2 sm:px-3 h-16 flex items-center justify-between gap-4">
@@ -19,12 +22,15 @@ const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftC
           {leftContent ? (
             leftContent
           ) : (
-            <>
+            <button 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+            >
               <BookIcon className="h-6 w-6 text-primary" />
               <h1 className="text-xl font-bold bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent">
                 Book Forum
               </h1>
-            </>
+            </button>
           )}
         </div>
 

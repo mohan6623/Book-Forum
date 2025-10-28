@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Eye, Pencil, Trash2, BookOpen, BarChart3, Users } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, BookOpen, BarChart3, Users } from 'lucide-react';
 import { bookService } from '@/services/bookService';
 import { Book, BookDto } from '@/types/book';
 
@@ -351,10 +351,19 @@ const AdminPanel = () => {
                 filteredBooks.map((book) => (
                   <div
                     key={book.id}
-                    className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/book/${book.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navigate(`/book/${book.id}`);
+                      }
+                    }}
+                    className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                   >
                     <img
-                      src={`data:image/jpeg;base64,${book.image}`}
+                      src={book.image}
                       alt={book.title}
                       className="w-16 h-20 object-cover rounded"
                     />
@@ -369,15 +378,10 @@ const AdminPanel = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate(`/book/${book.id}`)}
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditDialog(book)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEditDialog(book);
+                        }}
                         title="Edit"
                       >
                         <Pencil className="h-4 w-4" />
@@ -385,7 +389,10 @@ const AdminPanel = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteBook(book.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDeleteBook(book.id);
+                        }}
                         title="Delete"
                         className="text-destructive hover:text-destructive"
                       >

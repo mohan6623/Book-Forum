@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Book as BookIcon, Sparkles } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import BookCard from "@/components/BookCard";
@@ -10,6 +10,7 @@ import { FilterOptions } from "@/types/book";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -17,6 +18,17 @@ const Index = () => {
     authors: [],
     rating: 0,
   });
+  
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search query - wait 500ms after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Handle scroll to move search bar to header
   useEffect(() => {
@@ -26,26 +38,49 @@ const Index = () => {
       setIsScrolled(scrollPosition > searchBarThreshold);
     };
 
+    handleScroll(); // Check initial scroll position
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fetch books from backend
-  const { data: booksData, isLoading, error } = useQuery({
-    queryKey: ['books', searchQuery],
-    queryFn: () => {
-      if (searchQuery.trim()) {
-        return bookService.searchBooks(searchQuery, searchQuery, searchQuery);
+  // Fetch books from backend with infinite scroll
+  const trimmedQuery = debouncedQuery.trim();
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useInfiniteQuery({
+    queryKey: ["books", trimmedQuery],
+    queryFn: ({ pageParam }) => {
+      const page = pageParam ?? 0;
+      if (trimmedQuery) {
+        return bookService.searchBooks(trimmedQuery, trimmedQuery, trimmedQuery, page, 18);
       }
-      return bookService.getBooks(0, 100);
+      return bookService.getBooks(page, 18);
     },
+    getNextPageParam: (lastPage) => {
+      const currentPage = lastPage.page?.number ?? 0;
+      const totalPages = lastPage.page?.totalPages ?? 1;
+      const isLast = currentPage >= totalPages - 1;
+      return isLast ? undefined : currentPage + 1;
+    },
+    initialPageParam: 0,
   });
+
+  // Flatten all pages into single array
+  const allBooks = useMemo(() => {
+    return data?.pages.flatMap((page) => page.content) || [];
+  }, [data]);
 
   // Filter logic
   const filteredBooks = useMemo(() => {
-    if (!booksData?.content) return [];
+    if (!allBooks.length) return [];
     
-    return booksData.content.filter((book) => {
+    return allBooks.filter((book) => {
       // Category filter
       const matchesCategory =
         filters.category.length === 0 ||
@@ -61,7 +96,30 @@ const Index = () => {
 
       return matchesCategory && matchesAuthor && matchesRating;
     });
-  }, [booksData, filters]);
+  }, [allBooks, filters]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,14 +151,17 @@ const Index = () => {
 
           <div 
             className={`w-full max-w-4xl mx-auto transition-all duration-300 ease-in-out ${
-              isScrolled ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'
+              isScrolled ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
             }`}
           >
-            <SearchBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onFilterToggle={() => setIsFilterOpen(true)}
-            />
+            {!isScrolled && (
+              <SearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onFilterToggle={() => setIsFilterOpen(true)}
+                autoFocus={true}
+              />
+            )}
           </div>
         </div>
       </header>
@@ -111,7 +172,7 @@ const Index = () => {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-foreground">
-              {searchQuery ? "Search Results" : "All Books"}
+              {trimmedQuery ? "Search Results" : "All Books"}
             </h2>
             <p className="text-muted-foreground mt-1">
               {filteredBooks.length} {filteredBooks.length === 1 ? "book" : "books"} found
@@ -121,9 +182,14 @@ const Index = () => {
 
         {/* Books Grid */}
         {isLoading ? (
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground mt-4">Loading books...</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {[...Array(18)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="aspect-[2/3] bg-muted rounded-lg" />
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="text-center py-20 animate-fade-in">
@@ -134,11 +200,23 @@ const Index = () => {
             </p>
           </div>
         ) : filteredBooks.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {filteredBooks.map((book, index) => (
-              <BookCard key={book.id} book={book} index={index} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {filteredBooks.map((book, index) => (
+                <BookCard key={`${book.id}-${index}`} book={book} />
+              ))}
+            </div>
+            
+            {/* Load more trigger - invisible */}
+            <div ref={loadMoreRef} className="h-20" />
+            
+            {/* End message */}
+            {!hasNextPage && filteredBooks.length > 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground text-sm">You've reached the end</p>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 animate-fade-in">
             <BookIcon className="h-20 w-20 text-muted-foreground mx-auto mb-4 opacity-50" />

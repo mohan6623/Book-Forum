@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 interface BookCardProps {
   book: Book;
-  index: number;
 }
 
 const categoryColors: Record<string, string> = {
@@ -18,7 +17,7 @@ const categoryColors: Record<string, string> = {
   history: "bg-category-history",
 };
 
-const BookCard = ({ book, index }: BookCardProps) => {
+const BookCard = ({ book }: BookCardProps) => {
   const navigate = useNavigate();
   const categoryColorClass = categoryColors[book.category.toLowerCase()] || "bg-category-default";
 
@@ -29,8 +28,7 @@ const BookCard = ({ book, index }: BookCardProps) => {
   return (
     <Card
       onClick={handleClick}
-      className="group relative overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-500 hover:shadow-hover cursor-pointer animate-fade-in-up"
-      style={{ animationDelay: `${index * 50}ms` }}
+      className="group relative overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-500 hover:shadow-hover cursor-pointer"
     >
       {/* Category Badge */}
       <div className={`absolute top-3 right-3 z-10 px-3 py-1 rounded-full text-xs font-semibold text-white ${categoryColorClass} shadow-lg backdrop-blur-sm`}>

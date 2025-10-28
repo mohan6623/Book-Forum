@@ -12,8 +12,12 @@ import { SAMPLE_BOOK_DTO, SAMPLE_BOOKS_DTO } from '@/data/sampleBooks';
 
 export const bookService = {
   async getBooks(page: number = 0, size: number = 20): Promise<PageResponse<Book>> {
+    // Ensure page is a valid number
+    const validPage = typeof page === 'number' && !isNaN(page) ? page : 0;
+    const validSize = typeof size === 'number' && !isNaN(size) ? size : 20;
+    
     try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}?page=${page}&size=${size}`);
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}?page=${validPage}&size=${validSize}`);
       if (res.status === 204) {
         return emptyPageResponse<Book>();
       }
@@ -25,15 +29,12 @@ export const bookService = {
       // Return sample books when backend is down
       return {
         content: SAMPLE_BOOKS_DTO.map(mapBookDtoToBook),
-        pageable: { pageNumber: 0, pageSize: 20, offset: 0, paged: true, unpaged: false },
-        totalPages: 1,
-        totalElements: SAMPLE_BOOKS_DTO.length,
-        last: true,
-        size: 20,
-        number: 0,
-        numberOfElements: SAMPLE_BOOKS_DTO.length,
-        first: true,
-        empty: false,
+        page: {
+          size: 20,
+          number: 0,
+          totalElements: SAMPLE_BOOKS_DTO.length,
+          totalPages: 1,
+        },
       };
     }
   },
@@ -68,9 +69,13 @@ export const bookService = {
     page: number = 0,
     size: number = 30
   ): Promise<PageResponse<Book>> {
+    // Ensure page and size are valid numbers
+    const validPage = typeof page === 'number' && !isNaN(page) ? page : 0;
+    const validSize = typeof size === 'number' && !isNaN(size) ? size : 30;
+    
     const params = new URLSearchParams({
-      page: page.toString(),
-      size: size.toString(),
+      page: validPage.toString(),
+      size: validSize.toString(),
     });
     
     if (title) params.append('title', title);
@@ -172,15 +177,12 @@ export const bookService = {
       const { SAMPLE_COMMENTS } = await import('@/data/sampleBooks');
       return {
         content: SAMPLE_COMMENTS,
-        pageable: { pageNumber: 0, pageSize: size, offset: 0, paged: true, unpaged: false },
-        totalPages: 1,
-        totalElements: SAMPLE_COMMENTS.length,
-        last: true,
-        size: size,
-        number: 0,
-        numberOfElements: SAMPLE_COMMENTS.length,
-        first: true,
-        empty: false,
+        page: {
+          size: size,
+          number: 0,
+          totalElements: SAMPLE_COMMENTS.length,
+          totalPages: 1,
+        },
       };
     }
   },
@@ -224,15 +226,12 @@ export const bookService = {
 function emptyPageResponse<T>(): PageResponse<T> {
   return {
     content: [],
-    pageable: { pageNumber: 0, pageSize: 0, offset: 0, paged: false, unpaged: true },
-    totalPages: 0,
-    totalElements: 0,
-    last: true,
-    size: 0,
-    number: 0,
-    numberOfElements: 0,
-    first: true,
-    empty: true,
+    page: {
+      size: 0,
+      number: 0,
+      totalElements: 0,
+      totalPages: 0,
+    },
   };
 }
 

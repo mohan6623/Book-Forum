@@ -30,27 +30,20 @@ export interface CommentsDto {
   bookId: number;
   username: string;
   createdAt: string; // ISO string
+  profilePic?: string; // User's profile picture in base64 (from backend)
 }
 
 export type RatingsBreakdown = Record<number, number>; // {1..5 => count}
 
+// Actual backend response structure
 export interface PageResponse<T> {
   content: T[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    offset: number;
-    paged: boolean;
-    unpaged: boolean;
+  page: {
+    size: number;
+    number: number; // current page number (0-indexed)
+    totalElements: number;
+    totalPages: number;
   };
-  totalPages: number;
-  totalElements: number;
-  last: boolean;
-  size: number;
-  number: number;
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
 }
 
 export type FilterOptions = {
