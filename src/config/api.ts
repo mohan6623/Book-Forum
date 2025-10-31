@@ -18,4 +18,7 @@ export const API_ENDPOINTS = {
   UPDATE_COMMENT: (id: number) => `/book/${id}/comment`,
   DELETE_COMMENT: (commentId: number) => `/comment/${commentId}`,
   UPDATE_USER: (userId: number) => `/user/${userId}`,
+  // User availability checks
+  AVAILABLE_USERNAME: (username: string) => `/available/username?username=${encodeURIComponent(username)}`,
+  AVAILABLE_MAIL: (mail: string) => `/available/mail?mail=${encodeURIComponent(mail)}`,
 } as const;

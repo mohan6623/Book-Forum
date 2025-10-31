@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Star } from "lucide-react";
 import { Book } from "@/types/book";
 import { Card } from "@/components/ui/card";
@@ -28,7 +29,7 @@ const BookCard = ({ book }: BookCardProps) => {
   return (
     <Card
       onClick={handleClick}
-      className="group relative overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-500 hover:shadow-hover cursor-pointer"
+      className="group relative overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-500 hover:shadow-hover cursor-pointer cv-auto will-change-transform motion-reduce:transition-none"
     >
       {/* Category Badge */}
       <div className={`absolute top-3 right-3 z-10 px-3 py-1 rounded-full text-xs font-semibold text-white ${categoryColorClass} shadow-lg backdrop-blur-sm`}>
@@ -40,7 +41,10 @@ const BookCard = ({ book }: BookCardProps) => {
         <img
           src={book.image}
           alt={book.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          loading="lazy"
+          decoding="async"
+          sizes="(min-width: 1280px) 16vw, (min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 transform-gpu will-change-transform motion-reduce:transform-none"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
@@ -69,4 +73,4 @@ const BookCard = ({ book }: BookCardProps) => {
   );
 };
 
-export default BookCard;
+export default memo(BookCard);

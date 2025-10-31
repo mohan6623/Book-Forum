@@ -25,7 +25,6 @@ export const bookService = {
       const data: PageResponse<BookDto> = await res.json();
       return mapPage(data, mapBookDtoToBook);
     } catch (error) {
-      console.warn('Backend unreachable, using sample books data', error);
       // Return sample books when backend is down
       return {
         content: SAMPLE_BOOKS_DTO.map(mapBookDtoToBook),
@@ -56,7 +55,6 @@ export const bookService = {
       const dto: BookDto = await res.json();
       return mapBookDtoToBook(dto);
     } catch (error) {
-      console.warn('Backend unreachable or unauthorized, using sample book data', error);
       // Return sample book with the requested ID
       return mapBookDtoToBook({ ...SAMPLE_BOOK_DTO, id });
     }
@@ -160,7 +158,6 @@ export const bookService = {
       if (!res.ok) throw new Error('Failed to fetch ratings');
       return res.json();
     } catch (error) {
-      console.warn('Backend unreachable, using sample ratings data', error);
       const { SAMPLE_RATINGS_BREAKDOWN } = await import('@/data/sampleBooks');
       return SAMPLE_RATINGS_BREAKDOWN;
     }
@@ -173,7 +170,6 @@ export const bookService = {
       if (!res.ok) throw new Error('Failed to fetch comments');
       return res.json() as Promise<PageResponse<CommentsDto>>;
     } catch (error) {
-      console.warn('Backend unreachable, using sample comments data', error);
       const { SAMPLE_COMMENTS } = await import('@/data/sampleBooks');
       return {
         content: SAMPLE_COMMENTS,

@@ -33,11 +33,21 @@ export function getAuthHeader(): Record<string, string> {
 }
 
 export const authService = {
-  async register(user: { username: string; password: string; role?: string }): Promise<void> {
+  async register(user: { username: string; email?: string; mail?: string; password: string; role?: string }): Promise<void> {
+    // Backend expects property name 'mail', map from 'email' if provided
+    const roleNormalized = user.role
+      ? (user.role.startsWith('ROLE_') ? user.role : `ROLE_${user.role}`)
+      : undefined;
+    const payload = {
+      username: user.username,
+      password: user.password,
+      role: roleNormalized,
+      mail: user.mail ?? user.email,
+    } as const;
     const res = await fetch(`${API_BASE_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('Registration failed');
   },

@@ -7,12 +7,15 @@ import BookCard from "@/components/BookCard";
 import FilterPanel from "@/components/FilterPanel";
 import { bookService } from "@/services/bookService";
 import { FilterOptions } from "@/types/book";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [filters, setFilters] = useState<FilterOptions>({
     category: [],
     authors: [],
@@ -33,14 +36,14 @@ const Index = () => {
   // Handle scroll to move search bar to header
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      const searchBarThreshold = 200;
-      setIsScrolled(scrollPosition > searchBarThreshold);
+      const next = window.scrollY > 200;
+      // Only update state when value changes to avoid unnecessary re-renders while scrolling
+      setIsScrolled((prev) => (prev !== next ? next : prev));
     };
 
     handleScroll(); // Check initial scroll position
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true } as AddEventListenerOptions);
+    return () => window.removeEventListener('scroll', handleScroll as EventListener);
   }, []);
 
   // Fetch books from backend with infinite scroll
@@ -76,6 +79,26 @@ const Index = () => {
     return data?.pages.flatMap((page) => page.content) || [];
   }, [data]);
 
+  // Extract unique categories from all books
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set<string>();
+    allBooks.forEach((book) => {
+      if (book.category) {
+        uniqueCategories.add(book.category);
+      }
+    });
+    return Array.from(uniqueCategories).sort();
+  }, [allBooks]);
+
+  // Update filters when category dropdown changes
+  useEffect(() => {
+    if (selectedCategory === "all") {
+      setFilters((prev) => ({ ...prev, category: [] }));
+    } else {
+      setFilters((prev) => ({ ...prev, category: [selectedCategory] }));
+    }
+  }, [selectedCategory]);
+
   // Filter logic
   const filteredBooks = useMemo(() => {
     if (!allBooks.length) return [];
@@ -106,7 +129,7 @@ const Index = () => {
           fetchNextPage();
         }
       },
-      { threshold: 0.1 }
+      { rootMargin: '400px 0px', threshold: 0 }
     );
 
     const currentRef = loadMoreRef.current;
@@ -169,7 +192,7 @@ const Index = () => {
       {/* Main Content */}
   <main className="container mx-auto px-2 sm:px-3 py-12">
         {/* Results Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">
               {trimmedQuery ? "Search Results" : "All Books"}
@@ -178,6 +201,24 @@ const Index = () => {
               {filteredBooks.length} {filteredBooks.length === 1 ? "book" : "books"} found
             </p>
           </div>
+          
+          {/* Category Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">Filter by:</span>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Books Grid */}
@@ -185,9 +226,9 @@ const Index = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {[...Array(18)].map((_, i) => (
               <div key={i} className="space-y-2">
-                <div className="aspect-[2/3] bg-muted rounded-lg" />
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
+                <Skeleton className="aspect-[2/3] w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
               </div>
             ))}
           </div>
@@ -202,11 +243,24 @@ const Index = () => {
         ) : filteredBooks.length > 0 ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {filteredBooks.map((book, index) => (
-                <BookCard key={`${book.id}-${index}`} book={book} />
+              {filteredBooks.map((book) => (
+                <BookCard key={book.id} book={book} />
               ))}
             </div>
             
+            {/* Loading more skeletons during infinite scroll */}
+            {isFetchingNextPage && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={`more-${i}`} className="space-y-2">
+                    <Skeleton className="aspect-[2/3] w-full rounded-lg" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Load more trigger - invisible */}
             <div ref={loadMoreRef} className="h-20" />
             

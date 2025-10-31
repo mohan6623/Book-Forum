@@ -19,16 +19,26 @@ const UserProfileMenu = () => {
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const initials = (user?.username || "").slice(0, 2).toUpperCase();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full">
-          <Avatar className="h-8 w-8">
-            {isAuthenticated && user?.imageData && (
+          <Avatar key={isAuthenticated ? 'auth' : 'guest'} className="h-8 w-8">
+            {isAuthenticated && user?.imageData ? (
               <AvatarImage src={user.imageData} alt={user.username} />
-            )}
-            <AvatarFallback className="bg-primary/10 text-primary">
-              <User className="h-4 w-4" />
+            ) : null}
+            <AvatarFallback
+              // Ensure fallback renders immediately and visibly after logout
+              delayMs={0}
+              className="bg-primary/10 text-primary"
+            >
+              {isAuthenticated && user?.username ? (
+                <span className="text-[10px] font-medium">{initials}</span>
+              ) : (
+                <User className="h-4 w-4" />
+              )}
             </AvatarFallback>
           </Avatar>
         </Button>

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookIcon, Loader2 } from 'lucide-react';
+import { BookIcon, CheckCircle2, Loader2, XCircle, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { userService } from '@/services/userService';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -14,9 +16,140 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const { register } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Derived validation states
+  const passwordTooShort = password.length > 0 && password.length < 8;
+  const passwordTooLong = password.length > 60;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0, arrowOffset: 0 });
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Password strength and criteria (8-60 chars, at least one uppercase, one lowercase, one number, one special character)
+  const passwordStrength = useMemo(() => {
+    const pw = password || '';
+    const lengthOk = pw.length >= 8 && pw.length <= 60;
+    const upperOk = /[A-Z]/.test(pw);
+    const lowerOk = /[a-z]/.test(pw);
+    const numberOk = /\d/.test(pw);
+    const specialOk = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw);
+    const score = [lengthOk, upperOk, lowerOk, numberOk, specialOk].filter(Boolean).length;
+
+    let label = '';
+    let color = 'text-muted-foreground';
+    let barCount = 0; // How many bars to light up
+    let barColor = ''; // Color for the lit bars
+    
+    if (pw.length > 0) {
+      if (score <= 2) {
+        label = 'Weak';
+        color = 'text-destructive';
+        barCount = 1;
+        barColor = 'bg-red-500';
+      } else if (score === 3) {
+        label = 'Medium';
+        color = 'text-orange-600';
+        barCount = 2;
+        barColor = 'bg-orange-500';
+      } else if (score === 4) {
+        label = 'Good';
+        color = 'text-green-600';
+        barCount = 3;
+        barColor = 'bg-green-500';
+      } else if (score === 5) {
+        label = 'Strong';
+        color = 'text-green-600';
+        barCount = 4;
+        barColor = 'bg-green-500';
+      }
+    }
+
+    return { label, color, lengthOk, upperOk, lowerOk, numberOk, specialOk, barCount, barColor } as const;
+  }, [password]);
+
+  const [pwPopoverOpen, setPwPopoverOpen] = useState(false);
+  const pwWrapperRef = useRef<HTMLDivElement | null>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to update popover position based on cursor location
+  const updatePopoverPosition = useCallback(() => {
+    const input = passwordInputRef.current;
+    const card = cardRef.current;
+    if (!input || !card) return;
+
+    const inputRect = input.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const cursorPosition = input.selectionStart || 0;
+    
+    // Use a more accurate method to measure cursor position
+    // Create a hidden div that mimics the input styling
+    const mirror = document.createElement('div');
+    const computedStyle = window.getComputedStyle(input);
+    
+    // Copy all relevant styles
+    mirror.style.position = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.whiteSpace = 'pre';
+    mirror.style.font = computedStyle.font;
+    mirror.style.fontSize = computedStyle.fontSize;
+    mirror.style.fontFamily = computedStyle.fontFamily;
+    mirror.style.fontWeight = computedStyle.fontWeight;
+    mirror.style.letterSpacing = computedStyle.letterSpacing;
+    mirror.style.padding = '0';
+    mirror.style.border = 'none';
+    
+    // For password input, use bullets if showing dots
+    const displayValue = input.type === 'password' 
+      ? '•'.repeat(cursorPosition) 
+      : input.value.substring(0, cursorPosition);
+    
+    mirror.textContent = displayValue || '';
+    document.body.appendChild(mirror);
+    
+    const textWidth = mirror.getBoundingClientRect().width;
+    document.body.removeChild(mirror);
+    
+    // Calculate cursor position (account for padding and scroll)
+    const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+    const scrollLeft = input.scrollLeft || 0;
+    const cursorX = inputRect.left + paddingLeft + textWidth - scrollLeft;
+    
+    // Popover dimensions
+    const popoverWidth = 256; // w-64 = 16rem = 256px
+    const popoverPadding = 16; // padding from card edges
+    
+    // Calculate ideal popover left position (centered on cursor)
+    let popoverLeft = cursorX - (popoverWidth / 2);
+    
+    // Constrain within card boundaries
+    const minLeft = cardRect.left + popoverPadding;
+    const maxLeft = cardRect.right - popoverWidth - popoverPadding;
+    
+    // Clamp the position
+    popoverLeft = Math.max(minLeft, Math.min(popoverLeft, maxLeft));
+    
+    // Calculate arrow offset from center (how far the arrow needs to move)
+    const popoverCenter = popoverLeft + (popoverWidth / 2);
+    let arrowOffset = cursorX - popoverCenter;
+    
+    // Constrain arrow within popover bounds (leave some margin for the arrow width)
+    const arrowMargin = 12; // Distance from popover edge
+    const maxArrowOffset = (popoverWidth / 2) - arrowMargin;
+    arrowOffset = Math.max(-maxArrowOffset, Math.min(arrowOffset, maxArrowOffset));
+    
+    const y = inputRect.top;
+    
+    setPopoverPosition({ x: popoverLeft, y, arrowOffset });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,10 +163,19 @@ const Register = () => {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8 || password.length > 60) {
       toast({
-        title: 'Password too short',
-        description: 'Password must be at least 6 characters long.',
+        title: 'Invalid password length',
+        description: 'Password must be between 8 and 60 characters long.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!passwordStrength.upperOk || !passwordStrength.lowerOk || !passwordStrength.numberOk || !passwordStrength.specialOk) {
+      toast({
+        title: 'Password requirements not met',
+        description: 'Password must contain uppercase, lowercase, number, and special character.',
         variant: 'destructive',
       });
       return;
@@ -42,7 +184,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(username, email, password);
+      await register(username.trim(), email.trim(), password);
       toast({
         title: 'Registration successful!',
         description: 'You can now login with your credentials.',
@@ -59,9 +201,97 @@ const Register = () => {
     }
   };
 
+  // Simple debounce utility with cleanup
+  const debounce = (fn: () => void, delay: number) => {
+    const id = setTimeout(fn, delay);
+    return () => clearTimeout(id);
+  };
+
+  // Update popover position on scroll or resize
+  useEffect(() => {
+    if (pwPopoverOpen) {
+      const handleUpdate = () => {
+        if (updateTimeoutRef.current) {
+          clearTimeout(updateTimeoutRef.current);
+        }
+        updateTimeoutRef.current = setTimeout(() => {
+          updatePopoverPosition();
+        }, 10);
+      };
+      
+      window.addEventListener('scroll', handleUpdate, true);
+      window.addEventListener('resize', handleUpdate);
+      
+      return () => {
+        window.removeEventListener('scroll', handleUpdate, true);
+        window.removeEventListener('resize', handleUpdate);
+        if (updateTimeoutRef.current) {
+          clearTimeout(updateTimeoutRef.current);
+        }
+      };
+    }
+  }, [pwPopoverOpen, updatePopoverPosition]);
+
+  // Validate username availability (debounced)
+  useEffect(() => {
+    setUsernameAvailable(null);
+    if (!username || username.trim().length < 3) {
+      setCheckingUsername(false);
+      return;
+    }
+    setCheckingUsername(true);
+    return debounce(async () => {
+      const ok = await userService.checkUsernameAvailable(username.trim());
+      setUsernameAvailable(ok);
+      setCheckingUsername(false);
+    }, 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username]);
+
+  // Basic email regex for format check
+  const emailValid = useMemo(() => {
+    const re = /[^@\s]+@[^@\s]+\.[^@\s]+/;
+    return re.test(email.trim());
+  }, [email]);
+
+  // Validate email availability (debounced)
+  useEffect(() => {
+    setEmailAvailable(null);
+    if (!email || !emailValid) {
+      setCheckingEmail(false);
+      return;
+    }
+    setCheckingEmail(true);
+    return debounce(async () => {
+      const ok = await userService.checkEmailAvailable(email.trim());
+      setEmailAvailable(ok);
+      setCheckingEmail(false);
+    }, 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, emailValid]);
+
+  const canSubmit =
+    !loading &&
+    username.trim().length >= 3 &&
+    emailValid &&
+    password.length >= 8 &&
+    password.length <= 60 &&
+    passwordStrength.upperOk &&
+    passwordStrength.lowerOk &&
+    passwordStrength.numberOk &&
+    passwordStrength.specialOk &&
+    password === confirmPassword &&
+    usernameAvailable === true &&
+    emailAvailable === true &&
+    !checkingUsername &&
+    !checkingEmail;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      <Card ref={cardRef} className="w-full max-w-md">
         <CardHeader className="space-y-1 flex flex-col items-center">
           <div className="flex items-center gap-2 mb-2">
             <BookIcon className="h-8 w-8 text-primary" />
@@ -83,6 +313,29 @@ const Register = () => {
                 required
                 disabled={loading}
               />
+              {/* Helper status for username */}
+              {username && (
+                <div className="h-5 text-xs flex items-center gap-1">
+                  {checkingUsername ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span className="text-muted-foreground">Checking availability…</span>
+                    </>
+                  ) : username.trim().length < 3 ? (
+                    <span className="text-muted-foreground">At least 3 characters</span>
+                  ) : usernameAvailable === true ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      <span className="text-green-600">Username available</span>
+                    </>
+                  ) : usernameAvailable === false ? (
+                    <>
+                      <XCircle className="h-3 w-3 text-destructive" />
+                      <span className="text-destructive">Username already taken</span>
+                    </>
+                  ) : null}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -95,36 +348,275 @@ const Register = () => {
                 required
                 disabled={loading}
               />
+              {/* Helper status for email */}
+              {email && (
+                <div className="h-5 text-xs flex items-center gap-1">
+                  {!emailValid ? (
+                    <span className="text-destructive">Invalid email format</span>
+                  ) : checkingEmail ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span className="text-muted-foreground">Checking availability…</span>
+                    </>
+                  ) : emailAvailable === true ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      <span className="text-green-600">Email available</span>
+                    </>
+                  ) : emailAvailable === false ? (
+                    <>
+                      <XCircle className="h-3 w-3 text-destructive" />
+                      <span className="text-destructive">Email already in use</span>
+                    </>
+                  ) : null}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Choose a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
+              <div className="relative">
+                <Input
+                  ref={passwordInputRef}
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Choose a password"
+                  className="pr-10"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    // Debounce the position update to prevent flickering
+                    if (updateTimeoutRef.current) {
+                      clearTimeout(updateTimeoutRef.current);
+                    }
+                    updateTimeoutRef.current = setTimeout(() => {
+                      updatePopoverPosition();
+                    }, 10);
+                  }}
+                  onFocus={(e) => {
+                    setPwPopoverOpen(true);
+                    setTimeout(() => updatePopoverPosition(), 0);
+                  }}
+                  onBlur={() => setPwPopoverOpen(false)}
+                  onKeyUp={() => {
+                    // Debounce keyup updates
+                    if (updateTimeoutRef.current) {
+                      clearTimeout(updateTimeoutRef.current);
+                    }
+                    updateTimeoutRef.current = setTimeout(() => {
+                      updatePopoverPosition();
+                    }, 10);
+                  }}
+                  onClick={() => {
+                    setTimeout(() => updatePopoverPosition(), 0);
+                  }}
+                  required
+                  disabled={loading}
+                  minLength={8}
+                  maxLength={60}
+                />
+                {/* Custom positioned popover */}
+                {pwPopoverOpen && (
+                  <div
+                    className="fixed z-50 w-64 rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
+                    style={{
+                      left: `${popoverPosition.x}px`,
+                      top: `${popoverPosition.y - 10}px`,
+                      transform: 'translateY(-100%)',
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Password strength</span>
+                        <span className={passwordStrength.color + ' font-medium'}>{passwordStrength.label}</span>
+                      </div>
+                      {/* 4-part bar indicator */}
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map((bar) => (
+                          <div
+                            key={bar}
+                            className={`h-1.5 flex-1 rounded-full transition-colors ${
+                              bar <= passwordStrength.barCount
+                                ? passwordStrength.barColor
+                                : 'bg-muted'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <ul className="space-y-1 text-xs">
+                        <li className="flex items-center gap-1.5">
+                          {passwordStrength.lengthOk ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                          )}
+                          <span className={passwordStrength.lengthOk ? 'text-green-700' : 'text-muted-foreground'}>
+                            8-60 characters
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          {passwordStrength.upperOk ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                          )}
+                          <span className={passwordStrength.upperOk ? 'text-green-700' : 'text-muted-foreground'}>
+                            One capital letter
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          {passwordStrength.lowerOk ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                          )}
+                          <span className={passwordStrength.lowerOk ? 'text-green-700' : 'text-muted-foreground'}>
+                            One small letter
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          {passwordStrength.numberOk ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                          )}
+                          <span className={passwordStrength.numberOk ? 'text-green-700' : 'text-muted-foreground'}>
+                            One number
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          {passwordStrength.specialOk ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                          )}
+                          <span className={passwordStrength.specialOk ? 'text-green-700' : 'text-muted-foreground'}>
+                            One special character
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                    {/* Arrow pointing to cursor */}
+                    <div
+                      className="absolute bottom-0 left-1/2 translate-y-full"
+                      style={{ 
+                        width: 0, 
+                        height: 0,
+                        transform: `translateX(calc(-50% + ${popoverPosition.arrowOffset}px))`
+                      }}
+                    >
+                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-popover" />
+                    </div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center text-muted-foreground hover:text-foreground z-10"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+              {/* Helper status for password */}
+              {password && (
+                <div className="text-xs space-y-1" aria-live="polite">
+                  {passwordTooShort && (
+                    <div className="flex items-center gap-1 text-destructive">
+                      <XCircle className="h-3 w-3 flex-shrink-0" />
+                      <span>Password must be at least 8 characters</span>
+                    </div>
+                  )}
+                  {passwordTooLong && (
+                    <div className="flex items-center gap-1 text-destructive">
+                      <XCircle className="h-3 w-3 flex-shrink-0" />
+                      <span>Password must be 60 characters or less</span>
+                    </div>
+                  )}
+                  {!passwordTooShort && !passwordTooLong && (
+                    <>
+                      {!passwordStrength.upperOk && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <XCircle className="h-3 w-3 flex-shrink-0" />
+                          <span>Missing: One capital letter (A-Z)</span>
+                        </div>
+                      )}
+                      {!passwordStrength.lowerOk && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <XCircle className="h-3 w-3 flex-shrink-0" />
+                          <span>Missing: One small letter (a-z)</span>
+                        </div>
+                      )}
+                      {!passwordStrength.numberOk && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <XCircle className="h-3 w-3 flex-shrink-0" />
+                          <span>Missing: One number (0-9)</span>
+                        </div>
+                      )}
+                      {!passwordStrength.specialOk && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <XCircle className="h-3 w-3 flex-shrink-0" />
+                          <span>Missing: One special character (!@#$%...)</span>
+                        </div>
+                      )}
+                      {passwordStrength.barCount === 4 && (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+                          <span>Strong password - all requirements met!</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+              {/* strength meter moved to popover */}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Confirm your password"
+                  className="pr-10"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  minLength={8}
+                  maxLength={60}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center text-muted-foreground hover:text-foreground"
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                >
+                  {showConfirmPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+              {/* Helper status for confirm password */}
+              {confirmPassword && (
+                <div className="h-5 text-xs flex items-center gap-1" aria-live="polite">
+                  {passwordsMismatch ? (
+                    <>
+                      <XCircle className="h-3 w-3 text-destructive" />
+                      <span className="text-destructive">Passwords do not match</span>
+                    </>
+                  ) : password.length >= 8 ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      <span className="text-green-600">Passwords match</span>
+                    </>
+                  ) : null}
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={!canSubmit}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

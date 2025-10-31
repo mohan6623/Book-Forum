@@ -135,3 +135,11 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Performance helpers */
+@layer utilities {
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 400px 600px; /* approximate BookCard size */
+  }
+}

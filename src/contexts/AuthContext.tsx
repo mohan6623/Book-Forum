@@ -25,6 +25,7 @@ interface JwtPayload {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<JwtResponse['user'] | null>(null);
   const [loading, setLoading] = useState(true);
+  const USER_STORAGE_KEY = 'auth_user';
 
   useEffect(() => {
     // Check for existing token on mount
@@ -34,22 +35,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const decoded = jwtDecode<JwtPayload>(token);
         // Check if token is expired
         if (decoded.exp * 1000 > Date.now()) {
-          // Try to extract an id from common JWT fields: `id`, `userId`, or numeric `sub`
-          let extractedId: number | undefined;
-          if ((decoded as any).id) extractedId = Number((decoded as any).id);
-          else if ((decoded as any).userId) extractedId = Number((decoded as any).userId);
-          else if (!isNaN(Number(decoded.sub))) extractedId = Number(decoded.sub);
-
-          setUser({
-              id: extractedId,
-              username: decoded.sub,
-              role: decoded.role,
-            });
+          // Prefer restoring full user (including image) from storage if available
+          const stored = localStorage.getItem(USER_STORAGE_KEY);
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              setUser(parsed);
+            } catch {
+              // Fallback to minimal user from token if parsing fails
+              let extractedId: number | undefined;
+              if ((decoded as any).id) extractedId = Number((decoded as any).id);
+              else if ((decoded as any).userId) extractedId = Number((decoded as any).userId);
+              else if (!isNaN(Number(decoded.sub))) extractedId = Number(decoded.sub);
+              setUser({ id: extractedId, username: decoded.sub, role: decoded.role } as any);
+            }
+          } else {
+            // No stored user — construct minimal user from token
+            let extractedId: number | undefined;
+            if ((decoded as any).id) extractedId = Number((decoded as any).id);
+            else if ((decoded as any).userId) extractedId = Number((decoded as any).userId);
+            else if (!isNaN(Number(decoded.sub))) extractedId = Number(decoded.sub);
+            setUser({ id: extractedId, username: decoded.sub, role: decoded.role } as any);
+          }
         } else {
           clearToken();
         }
       } catch (error) {
-        console.error('Invalid token:', error);
+  // invalid token, clear it
         clearToken();
       }
     }
@@ -58,8 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     const response = await authService.login({ username, password });
-    console.log('Login response:', response); // Debug log
-    console.log('User imageData:', response.user?.imageData ? 'Present' : 'Missing'); // Debug log
+  // handle login response
     
     // Prefer to use the JWT claims as the source-of-truth for role and id
     const token = getToken();
@@ -83,12 +94,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             : undefined,
         };
         
-        console.log('Normalized user with image:', normalizedUser.imageData ? 'Image present' : 'No image'); // Debug
         setUser(normalizedUser);
+        try {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
+        } catch {}
       } catch (e) {
         // fallback to response user if token can't be decoded
         const respUser: any = response.user as any;
-        setUser({
+        const fallbackUser = {
           id: respUser.id,
           username: respUser.username ?? respUser.name ?? respUser.email,
           role: respUser.role,
@@ -96,12 +109,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           imageData: respUser?.imageBase64 
             ? `data:image/jpeg;base64,${respUser.imageBase64}`
             : undefined,
-        } as any);
+        } as any;
+        setUser(fallbackUser);
+        try { localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(fallbackUser)); } catch {}
       }
     } else {
       // no token — fallback
       const respUser: any = response.user as any;
-      setUser({
+      const noTokenUser = {
         id: respUser.id,
         username: respUser.username ?? respUser.name ?? respUser.email,
         role: respUser.role,
@@ -109,23 +124,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         imageData: respUser?.imageBase64 
           ? `data:image/jpeg;base64,${respUser.imageBase64}`
           : undefined,
-      } as any);
+      } as any;
+      setUser(noTokenUser);
+      try { localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(noTokenUser)); } catch {}
     }
   };
 
   const refreshUser = async () => {
     // Since backend doesn't have a GET user endpoint, 
     // this is a placeholder for future implementation
-    console.log('refreshUser called - no backend endpoint available yet');
+  // placeholder for future implementation
   };
 
   const register = async (username: string, email: string, password: string, role: string = 'USER') => {
-    await authService.register({ username, password, role });
+  const payload = { username, email, password, role };
+  await authService.register(payload);
   };
 
   const logout = () => {
     authService.logout();
     setUser(null);
+    try { localStorage.removeItem(USER_STORAGE_KEY); } catch {}
   };
 
   const isAuthenticated = !!user;
