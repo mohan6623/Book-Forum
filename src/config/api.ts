@@ -1,6 +1,6 @@
 // Prefer env override (Vite) with sensible default for local Spring Boot
 export const API_BASE_URL =
-  (import.meta as any)?.env?.VITE_API_BASE_URL ?? 'http://book-forum.ap-south-1.elasticbeanstalk.com/';
+  (import.meta as any)?.env?.VITE_API_BASE_URL ?? 'http://book-forum.ap-south-1.elasticbeanstalk.com';
 
 export const API_ENDPOINTS = {
   BOOKS: '/books',
