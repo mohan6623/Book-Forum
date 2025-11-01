@@ -12,6 +12,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  updateUserData: (updatedUser: Partial<JwtResponse['user']>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -135,6 +136,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // this is a placeholder for future implementation
   // placeholder for future implementation
   };
+  
+  const updateUserData = (updatedUser: Partial<JwtResponse['user']>) => {
+    if (user) {
+      const newUser = { ...user, ...updatedUser };
+      setUser(newUser);
+      try { localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser)); } catch {}
+    }
+  };
 
   const register = async (username: string, email: string, password: string, role: string = 'USER') => {
   const payload = { username, email, password, role };
@@ -163,6 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         loading,
         refreshUser,
+        updateUserData,
       }}
     >
       {children}

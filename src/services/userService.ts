@@ -28,7 +28,7 @@ export const userService = {
   return false;
   },
 
-  async updateUser(userId: number, user: Partial<UserProfile> & { password?: string }, imageFile?: File): Promise<void> {
+  async updateUser(userId: number, user: Partial<UserProfile> & { password?: string }, imageFile?: File): Promise<UserProfile> {
     const form = new FormData();
 
     // Build payload only with fields that are explicitly provided to avoid
@@ -63,5 +63,14 @@ export const userService = {
       } catch {}
       throw new Error(msg);
     }
+    
+    // Parse and return the updated user data
+    const data = await res.json();
+    return {
+      id: data.id,
+      username: data.username,
+      email: data.email,
+      imageData: data.imageBase64 ? `data:image/jpeg;base64,${data.imageBase64}` : undefined,
+    };
   },
 };

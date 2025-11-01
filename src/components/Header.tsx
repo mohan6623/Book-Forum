@@ -3,6 +3,8 @@ import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "./SearchBar";
 import UserProfileMenu from "./UserProfileMenu";
+import { Button } from "./ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   isScrolled?: boolean;
@@ -14,6 +16,7 @@ interface HeaderProps {
 
 const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftContent }: HeaderProps) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -49,6 +52,15 @@ const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftC
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {!isAuthenticated && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/register')}
+            >
+              Register
+            </Button>
+          )}
           <UserProfileMenu />
         </div>
       </div>

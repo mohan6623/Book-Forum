@@ -1,4 +1,4 @@
-import { User, Settings, HelpCircle, LogIn, LogOut, Shield } from "lucide-react";
+import { User, HelpCircle, LogIn, LogOut, Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +13,13 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const UserProfileMenu = () => {
   const { theme, setTheme } = useTheme();
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const initials = (user?.username || "").slice(0, 2).toUpperCase();
 
@@ -76,10 +78,6 @@ const UserProfileMenu = () => {
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
           </>
         ) : (
           <DropdownMenuItem 
@@ -108,7 +106,15 @@ const UserProfileMenu = () => {
           )}
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem 
+          className="cursor-pointer"
+          onClick={() => {
+            toast({
+              title: "Need Help?",
+              description: "Browse books, rate your favorites, and join discussions! Contact support for any issues.",
+            });
+          }}
+        >
           <HelpCircle className="mr-2 h-4 w-4" />
           <span>Help</span>
         </DropdownMenuItem>

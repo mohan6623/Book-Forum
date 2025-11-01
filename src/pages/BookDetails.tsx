@@ -343,117 +343,142 @@ const BookDetails = () => {
       />
 
       {/* Main Content */}
-      <main className="w-full px-2 sm:px-3 py-8">
+      <main className="w-full px-4 sm:px-6 py-8">
         {/* Back button moved into header via leftContent; remove spacer */}
         <div className="mb-2" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-[1600px] mx-auto">
           {/* Left Column - Book Image & Rating Distribution */}
           <div className="lg:col-span-1 space-y-4">
-            <Card className="overflow-hidden">
-              <div className="relative aspect-[2/3] bg-muted">
-                <img
-                  src={book.image}
-                  alt={book.title}
-                  className="w-full h-full object-cover"
-                />
-                {/* Category Badge */}
-                <div
-                  className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold text-white ${categoryColorClass} shadow-lg`}
-                >
-                  {book.category}
+            <div className="lg:sticky lg:top-20">
+              <Card className="overflow-hidden max-w-sm mx-auto">
+                <div className="relative aspect-[2/3] bg-muted">
+                  <img
+                    src={book.image}
+                    alt={book.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Category Badge */}
+                  <div
+                    className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold text-white ${categoryColorClass} shadow-lg`}
+                  >
+                    {book.category}
+                  </div>
                 </div>
-                {/* Average Rating Badge */}
-                <div className="absolute bottom-3 left-3 flex items-center gap-1 px-3 py-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg border border-border/50">
-                  <Star className="h-5 w-5 fill-secondary text-secondary" />
-                  <span className="text-lg font-bold text-foreground">
-                    {book.rating.toFixed(1)} | {totalRatings}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Ratings Breakdown */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">
-                  Rating Distribution
-                </h3>
-              </div>
-
-              {totalRatings > 0 ? (
-                <div className="space-y-2">
-                  {ratingPercentages.map(({ stars, count, percentage }) => (
-                    <div key={stars} className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 w-16">
-                        <span className="text-xs font-medium">{stars}</span>
-                        <Star className="h-3 w-3 fill-secondary text-secondary" />
-                      </div>
-                      <div className="flex-1">
-                        <Progress value={percentage} className="h-1.5" />
-                      </div>
-                      <span className="text-xs text-muted-foreground w-14 text-right">
-                        {count} ({percentage.toFixed(0)}%)
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-4 text-sm">
-                  No ratings yet. Be the first to rate this book!
-                </p>
-              )}
-            </Card>
+              </Card>
+            </div>
           </div>
 
           {/* Right Column - Details, Ratings, Comments */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Book Info */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <h1 className="text-2xl font-bold text-foreground mb-2">
+                <h1 className="text-2xl font-bold text-foreground leading-tight mb-1">
                   {book.title}
                 </h1>
-                <p className="text-lg text-muted-foreground">by {book.author}</p>
+                <p className="text-base text-muted-foreground">by {book.author}</p>
               </div>
 
 
               {/* Book Description */}
               {book.description && (
                 <div className="pt-2">
-                  <h3 className="text-sm font-semibold text-foreground mb-2">Description</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h3 className="text-xl font-semibold text-foreground mb-2">Description</h3>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     {book.description}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Rate This Book */}
-            <Card className="p-6 relative">
-              {!isAuthenticated && (
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <LogIn className="h-10 w-10 text-primary mx-auto mb-3" />
-                    <p className="text-foreground font-semibold mb-2">Sign in to rate this book</p>
-                    <p className="text-sm text-muted-foreground">Create an account or log in to share your rating</p>
+            {/* Rate This Book with Rating Distribution */}
+            <Card className="p-4 relative">
+              {/* Rating Distribution */}
+              {totalRatings > 0 ? (
+                <div className="mb-4">
+                  <div className="flex gap-0 items-center">
+                    {/* Overall Rating */}
+                    <div className="flex-shrink-0 flex flex-col items-center justify-center px-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-3xl font-bold text-foreground">{book.rating.toFixed(1)}</span>
+                        <Star className="h-6 w-6 fill-secondary text-secondary" />
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-tight text-center">
+                        {totalRatings.toLocaleString()} Rating{totalRatings !== 1 ? 's' : ''} &
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight text-center">
+                        {commentsData?.page?.totalElements || 0} Review{(commentsData?.page?.totalElements || 0) !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+
+                    {/* Rating Distribution Bars */}
+                    <div className="flex-1 max-w-xs">
+                      <div className="space-y-1">
+                        {ratingPercentages.map(({ stars, count, percentage }) => {
+                          // Determine color based on star rating
+                          const barColor = stars === 5 || stars === 4 || stars === 3 
+                            ? 'bg-green-500' 
+                            : stars === 2 
+                            ? 'bg-orange-500' 
+                            : 'bg-red-500';
+                          
+                          return (
+                            <div key={stars} className="flex items-center">
+                              <div className="flex items-center gap-1 w-10">
+                                <span className="text-xs font-medium">{stars}</span>
+                                <Star className="h-3 w-3 fill-secondary text-secondary" />
+                              </div>
+                              <div className="flex-1 bg-gray-200 rounded-full h-1 lg:h-1.5 overflow-hidden ml-1 mr-4">
+                                <div 
+                                  className={`h-full ${barColor} transition-all duration-300`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground w-16">
+                                {count.toLocaleString()}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <div className="mb-4 py-8">
+                  <p className="text-muted-foreground text-center text-base">
+                    No ratings yet. Be the first to rate this book!
+                  </p>
+                </div>
               )}
-              <h3 className="font-semibold mb-3 text-foreground">Rate this book</h3>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => handleStarClick(star)}
-                    onMouseEnter={() => isAuthenticated && setHoveredRating(star)}
+
+              <Separator className="mb-4" />
+
+              {/* Rate This Book */}
+              <div className="relative">
+                {!isAuthenticated && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <LogIn className="h-9 w-9 text-primary mx-auto mb-2" />
+                      <p className="text-base font-semibold mb-1">Sign in to rate this book</p>
+                      <p className="text-sm text-muted-foreground">Create an account or log in to share your rating</p>
+                    </div>
+                  </div>
+                )}
+                <h3 className="text-base font-semibold mb-2 text-foreground">Rate this book</h3>
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => handleStarClick(star)}
+                      onMouseEnter={() => isAuthenticated && setHoveredRating(star)}
                     onMouseLeave={() => setHoveredRating(0)}
                     className="transition-transform hover:scale-110"
                     disabled={!isAuthenticated || addRatingMutation.isPending}
                     aria-label={`Rate ${star} star${star>1?'s':''}`}
                   >
                     <Star
-                      className={`h-8 w-8 transition-colors ${
+                      className={`h-7 w-7 transition-colors ${
                         star <= (hoveredRating || userRating)
                           ? "fill-secondary text-secondary"
                           : "text-muted-foreground"
@@ -462,24 +487,25 @@ const BookDetails = () => {
                   </button>
                 ))}
               </div>
+              </div>
             </Card>
 
             {/* Comments Section */}
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-6">
+            <Card className="p-4">
+              <div className="flex items-center gap-2 mb-4">
                 <MessageSquare className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">
+                <h2 className="text-xl font-bold text-foreground">
                   Discussion
                 </h2>
               </div>
 
               {/* Add Comment */}
-              <div className="mb-8 relative">
+              <div className="mb-6 relative">
                 {!isAuthenticated && (
                   <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
                     <div className="text-center">
-                      <LogIn className="h-10 w-10 text-primary mx-auto mb-3" />
-                      <p className="text-foreground font-semibold mb-2">Sign in to comment</p>
+                      <LogIn className="h-10 w-10 text-primary mx-auto mb-2" />
+                      <p className="text-base font-semibold mb-1">Sign in to comment</p>
                       <p className="text-sm text-muted-foreground">Join the discussion about this book</p>
                     </div>
                   </div>
@@ -543,11 +569,11 @@ const BookDetails = () => {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-semibold text-sm text-foreground">
+                                <p className="font-semibold text-base text-foreground">
                                   {comment.username}
                                 </p>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Clock className="h-3.5 w-3.5" />
                                   {getRelativeTime(comment.createdAt)}
                                 </div>
                               </div>
@@ -608,7 +634,7 @@ const BookDetails = () => {
                               </div>
                             </div>
                           ) : (
-                            <p className="text-foreground whitespace-pre-wrap pl-10">
+                            <p className="text-base text-foreground whitespace-pre-wrap pl-10">
                               {comment.comment}
                             </p>
                           )}

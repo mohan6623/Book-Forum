@@ -11,7 +11,7 @@ import { Loader2, Upload, User } from 'lucide-react';
 import { userService } from '@/services/userService';
 
 const UserProfile = () => {
-  const { user } = useAuth();
+  const { user, updateUserData } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -66,7 +66,7 @@ const UserProfile = () => {
 
     setLoading(true);
     try {
-      await userService.updateUser(
+      const updatedUser = await userService.updateUser(
         userId,
         {
           username: user?.username || '',
@@ -76,6 +76,12 @@ const UserProfile = () => {
         },
         imageFile || undefined
       );
+      
+      // Update the user context with the returned data
+      updateUserData({
+        email: updatedUser.email,
+        imageData: updatedUser.imageData,
+      });
       
       toast({
         title: 'Success!',

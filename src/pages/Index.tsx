@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Book as BookIcon, Sparkles } from "lucide-react";
+import { Book as BookIcon, Sparkles, ArrowUpDown, Check } from "lucide-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
@@ -8,14 +8,16 @@ import FilterPanel from "@/components/FilterPanel";
 import { bookService } from "@/services/bookService";
 import { FilterOptions } from "@/types/book";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("default");
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     category: [],
     authors: [],
@@ -79,26 +81,6 @@ const Index = () => {
     return data?.pages.flatMap((page) => page.content) || [];
   }, [data]);
 
-  // Extract unique categories from all books
-  const categories = useMemo(() => {
-    const uniqueCategories = new Set<string>();
-    allBooks.forEach((book) => {
-      if (book.category) {
-        uniqueCategories.add(book.category);
-      }
-    });
-    return Array.from(uniqueCategories).sort();
-  }, [allBooks]);
-
-  // Update filters when category dropdown changes
-  useEffect(() => {
-    if (selectedCategory === "all") {
-      setFilters((prev) => ({ ...prev, category: [] }));
-    } else {
-      setFilters((prev) => ({ ...prev, category: [selectedCategory] }));
-    }
-  }, [selectedCategory]);
-
   // Filter logic
   const filteredBooks = useMemo(() => {
     if (!allBooks.length) return [];
@@ -120,6 +102,30 @@ const Index = () => {
       return matchesCategory && matchesAuthor && matchesRating;
     });
   }, [allBooks, filters]);
+
+  // Sort logic
+  const sortedBooks = useMemo(() => {
+    const books = [...filteredBooks];
+    
+    switch (sortBy) {
+      case "title-asc":
+        return books.sort((a, b) => a.title.localeCompare(b.title));
+      case "title-desc":
+        return books.sort((a, b) => b.title.localeCompare(a.title));
+      case "author-asc":
+        return books.sort((a, b) => a.author.localeCompare(b.author));
+      case "author-desc":
+        return books.sort((a, b) => b.author.localeCompare(a.author));
+      case "rating-high":
+        return books.sort((a, b) => b.rating - a.rating);
+      case "rating-low":
+        return books.sort((a, b) => a.rating - b.rating);
+      case "category":
+        return books.sort((a, b) => a.category.localeCompare(b.category));
+      default:
+        return books;
+    }
+  }, [filteredBooks, sortBy]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -198,27 +204,52 @@ const Index = () => {
               {trimmedQuery ? "Search Results" : "All Books"}
             </h2>
             <p className="text-muted-foreground mt-1">
-              {filteredBooks.length} {filteredBooks.length === 1 ? "book" : "books"} found
+              {sortedBooks.length} {sortedBooks.length === 1 ? "book" : "books"} found
             </p>
           </div>
           
-          {/* Category Filter Dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">Filter by:</span>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
+          {/* Sort Button & Sheet */}
+          <Sheet open={isSortOpen} onOpenChange={setIsSortOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                Sort
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px]">
+              <SheetHeader>
+                <SheetTitle className="text-lg">Sort Books</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-1">
+                {[
+                  { value: "default", label: "Default" },
+                  { value: "title-asc", label: "Title (A-Z)" },
+                  { value: "title-desc", label: "Title (Z-A)" },
+                  { value: "author-asc", label: "Author (A-Z)" },
+                  { value: "author-desc", label: "Author (Z-A)" },
+                  { value: "rating-high", label: "Rating (High to Low)" },
+                  { value: "rating-low", label: "Rating (Low to High)" },
+                  { value: "category", label: "Category" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSortBy(option.value);
+                      setIsSortOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm transition-all ${
+                      sortBy === option.value
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "hover:bg-accent hover:text-accent-foreground"
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    {sortBy === option.value && <Check className="h-4 w-4" />}
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Books Grid */}
@@ -240,10 +271,10 @@ const Index = () => {
               Make sure your Spring Boot backend is running on http://localhost:8080
             </p>
           </div>
-        ) : filteredBooks.length > 0 ? (
+        ) : sortedBooks.length > 0 ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {filteredBooks.map((book) => (
+              {sortedBooks.map((book) => (
                 <BookCard key={book.id} book={book} />
               ))}
             </div>
@@ -265,7 +296,7 @@ const Index = () => {
             <div ref={loadMoreRef} className="h-20" />
             
             {/* End message */}
-            {!hasNextPage && filteredBooks.length > 0 && (
+            {!hasNextPage && sortedBooks.length > 0 && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground text-sm">You've reached the end</p>
               </div>
