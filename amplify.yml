@@ -4,6 +4,7 @@ frontend:
     preBuild:
       commands:
         - npm ci
+        - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL"
     build:
       commands:
         - npm run build
