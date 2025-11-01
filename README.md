@@ -1,5 +1,9 @@
 # Welcome to your Lovable project
 
+## Deployed URLs
+- **Frontend**: https://main.d3uwoq5i447ir.amplifyapp.com/
+- **Backend**: http://book-forum.ap-south-1.elasticbeanstalk.com/
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/c6bcd9c7-733f-4904-9812-8fbb7c0ecf11
