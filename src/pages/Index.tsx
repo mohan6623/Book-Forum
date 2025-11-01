@@ -268,7 +268,7 @@ const Index = () => {
             <BookIcon className="h-20 w-20 text-destructive mx-auto mb-4 opacity-50" />
             <h3 className="text-2xl font-semibold text-foreground mb-2">Failed to load books</h3>
             <p className="text-muted-foreground">
-              Make sure your Spring Boot backend is running on http://localhost:8080
+              Make sure your Spring Boot backend is running on http://book-forum.ap-south-1.elasticbeanstalk.com/
             </p>
           </div>
         ) : sortedBooks.length > 0 ? (
