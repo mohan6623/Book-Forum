@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Book as BookIcon, Sparkles, ArrowUpDown, Check } from "lucide-react";
+import { Book as BookIcon, Sparkles } from "lucide-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
@@ -8,16 +8,12 @@ import FilterPanel from "@/components/FilterPanel";
 import { bookService } from "@/services/bookService";
 import { FilterOptions } from "@/types/book";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [sortBy, setSortBy] = useState<string>("default");
-  const [isSortOpen, setIsSortOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     category: [],
     authors: [],
@@ -103,30 +99,6 @@ const Index = () => {
     });
   }, [allBooks, filters]);
 
-  // Sort logic
-  const sortedBooks = useMemo(() => {
-    const books = [...filteredBooks];
-    
-    switch (sortBy) {
-      case "title-asc":
-        return books.sort((a, b) => a.title.localeCompare(b.title));
-      case "title-desc":
-        return books.sort((a, b) => b.title.localeCompare(a.title));
-      case "author-asc":
-        return books.sort((a, b) => a.author.localeCompare(b.author));
-      case "author-desc":
-        return books.sort((a, b) => b.author.localeCompare(a.author));
-      case "rating-high":
-        return books.sort((a, b) => b.rating - a.rating);
-      case "rating-low":
-        return books.sort((a, b) => a.rating - b.rating);
-      case "category":
-        return books.sort((a, b) => a.category.localeCompare(b.category));
-      default:
-        return books;
-    }
-  }, [filteredBooks, sortBy]);
-
   // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -198,68 +170,25 @@ const Index = () => {
       {/* Main Content */}
   <main className="container mx-auto px-2 sm:px-3 py-12">
         {/* Results Header */}
-        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-foreground">
               {trimmedQuery ? "Search Results" : "All Books"}
             </h2>
             <p className="text-muted-foreground mt-1">
-              {sortedBooks.length} {sortedBooks.length === 1 ? "book" : "books"} found
+              {filteredBooks.length} {filteredBooks.length === 1 ? "book" : "books"} found
             </p>
           </div>
-          
-          {/* Sort Button & Sheet */}
-          <Sheet open={isSortOpen} onOpenChange={setIsSortOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <ArrowUpDown className="h-4 w-4" />
-                Sort
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[280px]">
-              <SheetHeader>
-                <SheetTitle className="text-lg">Sort Books</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4 space-y-1">
-                {[
-                  { value: "default", label: "Default" },
-                  { value: "title-asc", label: "Title (A-Z)" },
-                  { value: "title-desc", label: "Title (Z-A)" },
-                  { value: "author-asc", label: "Author (A-Z)" },
-                  { value: "author-desc", label: "Author (Z-A)" },
-                  { value: "rating-high", label: "Rating (High to Low)" },
-                  { value: "rating-low", label: "Rating (Low to High)" },
-                  { value: "category", label: "Category" },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      setSortBy(option.value);
-                      setIsSortOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm transition-all ${
-                      sortBy === option.value
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  >
-                    <span>{option.label}</span>
-                    {sortBy === option.value && <Check className="h-4 w-4" />}
-                  </button>
-                ))}
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
 
         {/* Books Grid */}
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {[...Array(18)].map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-[2/3] w-full rounded-lg" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
+              <div key={i} className="space-y-2 animate-pulse">
+                <Skeleton className="aspect-[2/3] w-full rounded-lg bg-gradient-to-br from-muted via-background to-muted" />
+                <Skeleton className="h-4 w-3/4 bg-gradient-to-r from-muted via-background to-muted" />
+                <Skeleton className="h-3 w-1/2 bg-gradient-to-r from-muted via-background to-muted" />
               </div>
             ))}
           </div>
@@ -268,13 +197,13 @@ const Index = () => {
             <BookIcon className="h-20 w-20 text-destructive mx-auto mb-4 opacity-50" />
             <h3 className="text-2xl font-semibold text-foreground mb-2">Failed to load books</h3>
             <p className="text-muted-foreground">
-              Make sure your Spring Boot backend is running on https://book-forum.ap-south-1.elasticbeanstalk.com
+              Make sure your Spring Boot backend is running on http://localhost:8080
             </p>
           </div>
-        ) : sortedBooks.length > 0 ? (
+        ) : filteredBooks.length > 0 ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {sortedBooks.map((book) => (
+              {filteredBooks.map((book) => (
                 <BookCard key={book.id} book={book} />
               ))}
             </div>
@@ -283,10 +212,10 @@ const Index = () => {
             {isFetchingNextPage && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6">
                 {[...Array(6)].map((_, i) => (
-                  <div key={`more-${i}`} className="space-y-2">
-                    <Skeleton className="aspect-[2/3] w-full rounded-lg" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
+                  <div key={`more-${i}`} className="space-y-2 animate-pulse">
+                    <Skeleton className="aspect-[2/3] w-full rounded-lg bg-gradient-to-br from-muted via-background to-muted" />
+                    <Skeleton className="h-4 w-3/4 bg-gradient-to-r from-muted via-background to-muted" />
+                    <Skeleton className="h-3 w-1/2 bg-gradient-to-r from-muted via-background to-muted" />
                   </div>
                 ))}
               </div>
@@ -296,7 +225,7 @@ const Index = () => {
             <div ref={loadMoreRef} className="h-20" />
             
             {/* End message */}
-            {!hasNextPage && sortedBooks.length > 0 && (
+            {!hasNextPage && filteredBooks.length > 0 && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground text-sm">You've reached the end</p>
               </div>

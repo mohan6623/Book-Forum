@@ -8,7 +8,8 @@ export type JwtResponse = {
     name?: string;
     role?: string;
     email?: string;
-    imageBase64?: string; // Backend sends imageBase64
+    imagePublicId?: string; // Cloudinary public ID
+    imageUrl?: string; // Cloudinary URL
     imageData?: string;
   };
 };
@@ -44,7 +45,7 @@ export const authService = {
       role: roleNormalized,
       mail: user.mail ?? user.email,
     } as const;
-    const res = await fetch(`${API_BASE_URL}/register`, {
+    const res = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -53,7 +54,7 @@ export const authService = {
   },
 
   async login(user: { username: string; password: string }): Promise<JwtResponse> {
-    const res = await fetch(`${API_BASE_URL}/login`, {
+    const res = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(user),

@@ -1,0 +1,94 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build artifacts
+.next
+out
+build
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+__mocks__
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Documentation (keep only README)
+*.md
+!README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+docs/
+
+# Config files not needed in production
+.eslintrc*
+.eslintignore
+eslint.config.js
+.prettierrc*
+.prettierignore
+tsconfig.*.json
+!tsconfig.json
+jest.config.*
+vitest.config.*
+
+# Editor configs
+.editorconfig
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Supabase local
+supabase/.temp
+supabase/functions
+
+# Lock files (Vercel will use package.json)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Misc
+*.tsbuildinfo
+.cache

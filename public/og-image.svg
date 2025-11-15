@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Book icon (large) -->
+  <g transform="translate(200, 150)">
+    <rect x="0" y="0" width="200" height="280" rx="10" fill="#FFFFFF" opacity="0.95"/>
+    <rect x="10" y="10" width="180" height="260" rx="8" fill="#E0E7FF"/>
+    <rect x="0" y="0" width="20" height="280" fill="#818CF8"/>
+    
+    <!-- Page lines -->
+    <line x1="40" y1="50" x2="170" y2="50" stroke="#818CF8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="40" y1="90" x2="160" y2="90" stroke="#818CF8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="40" y1="130" x2="170" y2="130" stroke="#818CF8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="40" y1="170" x2="150" y2="170" stroke="#818CF8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="40" y1="210" x2="170" y2="210" stroke="#818CF8" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Text content -->
+  <text x="500" y="200" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#FFFFFF">
+    Book Forum
+  </text>
+  <text x="500" y="280" font-family="Arial, sans-serif" font-size="36" fill="#E0E7FF">
+    Discover Your Next Favorite Read
+  </text>
+  <text x="500" y="350" font-family="Arial, sans-serif" font-size="28" fill="#C7D2FE">
+    Search, Rate, and Discuss Books
+  </text>
+  
+  <!-- Features -->
+  <g transform="translate(500, 400)">
+    <circle cx="0" cy="0" r="12" fill="#10B981"/>
+    <text x="25" y="8" font-family="Arial, sans-serif" font-size="24" fill="#FFFFFF">Browse Curated Collections</text>
+  </g>
+  <g transform="translate(500, 450)">
+    <circle cx="0" cy="0" r="12" fill="#10B981"/>
+    <text x="25" y="8" font-family="Arial, sans-serif" font-size="24" fill="#FFFFFF">Share Reviews & Ratings</text>
+  </g>
+  <g transform="translate(500, 500)">
+    <circle cx="0" cy="0" r="12" fill="#10B981"/>
+    <text x="25" y="8" font-family="Arial, sans-serif" font-size="24" fill="#FFFFFF">Join the Community</text>
+  </g>
+</svg>

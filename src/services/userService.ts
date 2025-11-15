@@ -5,9 +5,9 @@ export interface UserProfile {
   id: number;
   username: string;
   email?: string;
-  imageName?: string;
-  imageData?: string;
-  imageType?: string;
+  imagePublicId?: string; // Cloudinary public ID
+  imageUrl?: string; // Cloudinary URL
+  imageData?: string; // Resolved URL for UI (same as imageUrl)
 }
 
 export const userService = {
@@ -43,7 +43,7 @@ export const userService = {
     // Only include password if provided (user wants to change it)
     if ((user as any).password && String((user as any).password).length > 0) payload.password = (user as any).password;
 
-    if (imageFile) payload.imageName = imageFile.name;
+    // No imageName needed - backend handles Cloudinary upload
 
     form.append('user', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
     if (imageFile) form.append('imageFile', imageFile);
@@ -68,9 +68,11 @@ export const userService = {
     const data = await res.json();
     return {
       id: data.id,
-      username: data.username,
+      username: data.name, // Backend sends 'name' field
       email: data.email,
-      imageData: data.imageBase64 ? `data:image/jpeg;base64,${data.imageBase64}` : undefined,
+      imageUrl: data.imageUrl, // Cloudinary URL
+      imagePublicId: data.imagePublicId, // Cloudinary public ID
+      imageData: data.imageUrl, // Use Cloudinary URL directly for UI
     };
   },
 };

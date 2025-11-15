@@ -91,13 +91,13 @@ export const bookService = {
   async addBook(book: Partial<BookDto>, imageFile: File): Promise<void> {
     const form = new FormData();
     // Send minimal Book as backend expects entity fields except image
+    // Backend now handles Cloudinary upload, so we don't need imageName
     const payload = {
       id: book.id ?? 0,
       title: book.title ?? '',
       description: book.description ?? '',
       author: book.author ?? '',
       category: book.category ?? '',
-      imageName: imageFile.name,
     } as any;
     form.append('book', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
     form.append('imageFile', imageFile);
@@ -112,13 +112,13 @@ export const bookService = {
   // Admin: update book (multipart, image optional)
   async updateBook(id: number, book: Partial<BookDto>, imageFile?: File): Promise<void> {
     const form = new FormData();
+    // Backend now handles Cloudinary upload/delete, no need for imageName
     const payload = {
       id,
       title: book.title ?? '',
       description: book.description ?? '',
       author: book.author ?? '',
       category: book.category ?? '',
-      imageName: imageFile?.name ?? book.imageName ?? '',
     } as any;
     form.append('book', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
     if (imageFile) form.append('imageFile', imageFile);

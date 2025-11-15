@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Book Forum Logo -->
+  <rect x="20" y="20" width="160" height="160" rx="20" fill="#4F46E5"/>
+  
+  <!-- Book icon -->
+  <g transform="translate(60, 50)">
+    <!-- Book pages -->
+    <rect x="0" y="10" width="80" height="90" rx="4" fill="#FFFFFF"/>
+    <rect x="5" y="15" width="70" height="80" rx="2" fill="#E0E7FF"/>
+    
+    <!-- Book spine -->
+    <rect x="0" y="10" width="8" height="90" fill="#818CF8"/>
+    
+    <!-- Page lines -->
+    <line x1="15" y1="30" x2="70" y2="30" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+    <line x1="15" y1="45" x2="65" y2="45" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+    <line x1="15" y1="60" x2="70" y2="60" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+    <line x1="15" y1="75" x2="60" y2="75" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Chat bubble overlay -->
+  <circle cx="150" cy="150" r="25" fill="#10B981"/>
+  <path d="M 140 145 Q 140 140 145 140 L 155 140 Q 160 140 160 145 L 160 150 Q 160 155 155 155 L 147 155 L 142 160 L 142 155 Q 140 155 140 150 Z" fill="#FFFFFF"/>
+</svg>

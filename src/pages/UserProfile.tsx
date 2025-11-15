@@ -14,6 +14,7 @@ const UserProfile = () => {
   const { user, updateUserData } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -69,7 +70,7 @@ const UserProfile = () => {
       const updatedUser = await userService.updateUser(
         userId,
         {
-          username: user?.username || '',
+          username: username.trim() || user?.username || '',
           email: email || user?.email,
           // include password only if user provided a new one
           ...(newPassword ? { password: newPassword } : {}),
@@ -79,6 +80,7 @@ const UserProfile = () => {
       
       // Update the user context with the returned data
       updateUserData({
+        username: updatedUser.username,
         email: updatedUser.email,
         imageData: updatedUser.imageData,
       });
@@ -136,9 +138,10 @@ const UserProfile = () => {
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
-                  value={user?.username || ''}
-                  disabled
-                  className="bg-muted"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={user?.username || 'Enter your username'}
+                  disabled={loading}
                 />
               </div>
 

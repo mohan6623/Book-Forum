@@ -89,10 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: respUser?.username ?? respUser?.name ?? decoded.sub ?? respUser?.email,
           role: decoded.role ?? respUser?.role,
           email: respUser?.email,
-          // Backend sends imageBase64 (just the base64 string), convert to data URL
-          imageData: respUser?.imageBase64 
-            ? `data:image/jpeg;base64,${respUser.imageBase64}`
-            : undefined,
+          // Backend now sends Cloudinary URL directly
+          imageData: respUser?.imageUrl ?? undefined,
         };
         
         setUser(normalizedUser);
@@ -107,9 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: respUser.username ?? respUser.name ?? respUser.email,
           role: respUser.role,
           email: respUser.email,
-          imageData: respUser?.imageBase64 
-            ? `data:image/jpeg;base64,${respUser.imageBase64}`
-            : undefined,
+          imageData: respUser?.imageUrl ?? undefined,
         } as any;
         setUser(fallbackUser);
         try { localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(fallbackUser)); } catch {}
@@ -122,9 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: respUser.username ?? respUser.name ?? respUser.email,
         role: respUser.role,
         email: respUser.email,
-        imageData: respUser?.imageBase64 
-          ? `data:image/jpeg;base64,${respUser.imageBase64}`
-          : undefined,
+        imageData: respUser?.imageUrl ?? undefined,
       } as any;
       setUser(noTokenUser);
       try { localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(noTokenUser)); } catch {}

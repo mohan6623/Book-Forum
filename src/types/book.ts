@@ -3,7 +3,7 @@ export interface Book {
   id: number;
   title: string;
   author: string;
-  image: string; // resolved data URL assembled from imageType + base64
+  image: string; // Cloudinary URL from backend
   rating: number; // average rating 0-5
   category: string;
   description?: string;
@@ -17,9 +17,8 @@ export interface BookDto {
   description?: string;
   author: string;
   category: string;
-  imageName?: string;
-  imageType?: string; // e.g., image/png
-  imageBase64?: string; // base64 without prefix
+  imageUrl?: string; // Cloudinary URL
+  imagePublicId?: string; // Cloudinary public ID
   averageRating?: number;
   noOfRatings?: number;
 }
@@ -30,7 +29,7 @@ export interface CommentsDto {
   bookId: number;
   username: string;
   createdAt: string; // ISO string
-  profilePic?: string; // User's profile picture in base64 (from backend)
+  profilePic?: string; // User's profile picture URL from Cloudinary
 }
 
 export type RatingsBreakdown = Record<number, number>; // {1..5 => count}
@@ -54,10 +53,8 @@ export type FilterOptions = {
 
 // Helpers to map backend DTOs to UI models
 export function toImageUrl(dto: BookDto): string {
-  if (dto.imageBase64 && dto.imageType) {
-    return `data:${dto.imageType};base64,${dto.imageBase64}`;
-  }
-  return '';
+  // Backend now returns Cloudinary URLs directly
+  return dto.imageUrl || '';
 }
 
 export function mapBookDtoToBook(dto: BookDto): Book {
