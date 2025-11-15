@@ -1,5 +1,5 @@
-// Production backend URL
-export const API_BASE_URL = 'http://129.154.47.172:8080';
+// Use relative API paths - Vercel will proxy to backend
+export const API_BASE_URL = '/api';
 
 export const API_ENDPOINTS = {
   BOOKS: '/api/books',
