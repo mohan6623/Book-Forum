@@ -1,6 +1,5 @@
-// Prefer env override (Vite) with sensible default for local Spring Boot
-export const API_BASE_URL =
-  (import.meta as any)?.env?.VITE_API_BASE_URL ?? 'http://localhost:8080';
+// Production backend URL
+export const API_BASE_URL = 'http://129.154.47.172:8080';
 
 export const API_ENDPOINTS = {
   BOOKS: '/api/books',
