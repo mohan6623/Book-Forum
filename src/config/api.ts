@@ -1,5 +1,6 @@
-// Use relative API paths - Vercel will proxy to backend
-export const API_BASE_URL = '/api';
+// Prefer env override (Vite) with sensible default for local Spring Boot
+export const API_BASE_URL =
+  (import.meta as any)?.env?.VITE_API_BASE_URL ?? 'https://api.bookforum.app:8443';
 
 export const API_ENDPOINTS = {
   BOOKS: '/books',
