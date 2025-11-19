@@ -524,11 +524,14 @@ const BookDetails = () => {
               {/* Rate This Book */}
               <div className="relative">
                 {!isAuthenticated && (
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <LogIn className="h-9 w-9 text-primary mx-auto mb-2" />
-                      <p className="text-base font-semibold mb-1">Sign in to rate this book</p>
-                      <p className="text-sm text-muted-foreground">Create an account or log in to share your rating</p>
+                  <div 
+                    className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-background/90 transition-colors"
+                    onClick={() => navigate('/login')}
+                  >
+                    <div className="text-center px-3 py-2">
+                      <LogIn className="h-6 w-6 text-primary mx-auto mb-1.5" />
+                      <p className="text-xs font-semibold mb-0.5 leading-tight">Sign in to rate this book</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">Log in to share your rating</p>
                     </div>
                   </div>
                 )}
@@ -569,11 +572,14 @@ const BookDetails = () => {
               {/* Add Comment */}
               <div className="mb-6 relative">
                 {!isAuthenticated && (
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <LogIn className="h-10 w-10 text-primary mx-auto mb-2" />
-                      <p className="text-base font-semibold mb-1">Sign in to comment</p>
-                      <p className="text-sm text-muted-foreground">Join the discussion about this book</p>
+                  <div 
+                    className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-background/90 transition-colors"
+                    onClick={() => navigate('/login')}
+                  >
+                    <div className="text-center px-3 py-2">
+                      <LogIn className="h-6 w-6 text-primary mx-auto mb-1.5" />
+                      <p className="text-xs font-semibold mb-0.5 leading-tight">Sign in to comment</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">Join the discussion about this book</p>
                     </div>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import { User, HelpCircle, LogIn, LogOut, Shield } from "lucide-react";
+import { User, HelpCircle, LogIn, LogOut, Shield, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,13 +80,22 @@ const UserProfileMenu = () => {
             </DropdownMenuItem>
           </>
         ) : (
-          <DropdownMenuItem 
-            className="cursor-pointer"
-            onClick={() => navigate('/login')}
-          >
-            <LogIn className="mr-2 h-4 w-4" />
-            <span>Login</span>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem 
+              className="cursor-pointer"
+              onClick={() => navigate('/login')}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              <span>Login</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="cursor-pointer"
+              onClick={() => navigate('/register')}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              <span>Register</span>
+            </DropdownMenuItem>
+          </>
         )}
         
         <DropdownMenuItem 

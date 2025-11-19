@@ -56,6 +56,7 @@ const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftC
             <Button 
               variant="outline" 
               size="sm"
+              className="hidden sm:inline-flex"
               onClick={() => navigate('/register')}
             >
               Register
