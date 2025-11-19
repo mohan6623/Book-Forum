@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Star, ArrowLeft, MessageSquare, TrendingUp, User, Clock, LogIn, Edit2, Trash2, X, Check } from "lucide-react";
 import { bookService } from "@/services/bookService";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import { getBookDetailImage, getUserAvatarImage } from "@/lib/cloudinary";
+import { useScrollRestoration, saveScrollPosition } from "@/hooks/useScrollRestoration";
 // Rating dialog removed – direct click to rate/update
 
 const categoryColors: Record<string, string> = {
@@ -28,8 +29,10 @@ const categoryColors: Record<string, string> = {
 };
 
 const BookDetails = () => {
+  useScrollRestoration();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuth();
@@ -400,7 +403,10 @@ const BookDetails = () => {
         leftContent={
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              saveScrollPosition();
+              navigate("/");
+            }}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -522,11 +528,14 @@ const BookDetails = () => {
               <Separator className="mb-4" />
 
               {/* Rate This Book */}
-              <div className="relative min-h-[120px]">
+              <div className="relative min-h-[80px]">
                 {!isAuthenticated && (
                   <div 
                     className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-background/90 transition-colors"
-                    onClick={() => navigate('/login')}
+                    onClick={() => {
+                      saveScrollPosition();
+                      navigate('/login', { state: { from: window.location.pathname } });
+                    }}
                   >
                     <div className="text-center px-3 py-2">
                       <LogIn className="h-6 w-6 text-primary mx-auto mb-1.5" />
@@ -574,7 +583,10 @@ const BookDetails = () => {
                 {!isAuthenticated && (
                   <div 
                     className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-background/90 transition-colors"
-                    onClick={() => navigate('/login')}
+                    onClick={() => {
+                      saveScrollPosition();
+                      navigate('/login', { state: { from: window.location.pathname } });
+                    }}
                   >
                     <div className="text-center px-3 py-2">
                       <LogIn className="h-6 w-6 text-primary mx-auto mb-1.5" />

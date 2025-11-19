@@ -8,8 +8,10 @@ import FilterPanel from "@/components/FilterPanel";
 import { bookService } from "@/services/bookService";
 import { FilterOptions } from "@/types/book";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 
 const Index = () => {
+  useScrollRestoration();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);

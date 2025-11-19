@@ -1,10 +1,11 @@
 import { BookIcon } from "lucide-react";
 import { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SearchBar from "./SearchBar";
 import UserProfileMenu from "./UserProfileMenu";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { saveScrollPosition } from "@/hooks/useScrollRestoration";
 
 interface HeaderProps {
   isScrolled?: boolean;
@@ -16,7 +17,13 @@ interface HeaderProps {
 
 const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftContent }: HeaderProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
+
+  const handleLogoClick = () => {
+    saveScrollPosition();
+    navigate('/');
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -26,7 +33,7 @@ const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftC
             leftContent
           ) : (
             <button 
-              onClick={() => navigate('/')}
+              onClick={handleLogoClick}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
             >
               <BookIcon className="h-6 w-6 text-primary" />

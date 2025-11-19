@@ -2,7 +2,8 @@ import { memo } from "react";
 import { Star } from "lucide-react";
 import { Book } from "@/types/book";
 import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { saveScrollPosition } from "@/hooks/useScrollRestoration";
 
 interface BookCardProps {
   book: Book;
@@ -20,9 +21,12 @@ const categoryColors: Record<string, string> = {
 
 const BookCard = ({ book }: BookCardProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const categoryColorClass = categoryColors[book.category.toLowerCase()] || "bg-category-default";
 
   const handleClick = () => {
+    // Save current scroll position before navigating
+    saveScrollPosition();
     navigate(`/book/${book.id}`);
   };
 

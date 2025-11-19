@@ -12,13 +12,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { saveScrollPosition } from "@/hooks/useScrollRestoration";
 
 const UserProfileMenu = () => {
   const { theme, setTheme } = useTheme();
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const initials = (user?.username || "").slice(0, 2).toUpperCase();
@@ -65,7 +67,10 @@ const UserProfileMenu = () => {
             {isAdmin && (
               <DropdownMenuItem 
                 className="cursor-pointer"
-                onClick={() => navigate('/admin')}
+                onClick={() => {
+                  saveScrollPosition();
+                  navigate('/admin');
+                }}
               >
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Admin Panel</span>
@@ -73,7 +78,10 @@ const UserProfileMenu = () => {
             )}
             <DropdownMenuItem 
               className="cursor-pointer"
-              onClick={() => navigate('/profile')}
+              onClick={() => {
+                saveScrollPosition();
+                navigate('/profile');
+              }}
             >
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
@@ -83,14 +91,20 @@ const UserProfileMenu = () => {
           <>
             <DropdownMenuItem 
               className="cursor-pointer"
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                saveScrollPosition();
+                navigate('/login', { state: { from: location.pathname } });
+              }}
             >
               <LogIn className="mr-2 h-4 w-4" />
               <span>Login</span>
             </DropdownMenuItem>
             <DropdownMenuItem 
               className="cursor-pointer"
-              onClick={() => navigate('/register')}
+              onClick={() => {
+                saveScrollPosition();
+                navigate('/register');
+              }}
             >
               <UserPlus className="mr-2 h-4 w-4" />
               <span>Register</span>
@@ -134,6 +148,7 @@ const UserProfileMenu = () => {
             <DropdownMenuItem 
               className="cursor-pointer text-destructive focus:text-destructive"
               onClick={() => {
+                saveScrollPosition();
                 logout();
                 navigate('/');
               }}
