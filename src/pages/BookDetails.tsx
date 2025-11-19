@@ -522,7 +522,7 @@ const BookDetails = () => {
               <Separator className="mb-4" />
 
               {/* Rate This Book */}
-              <div className="relative">
+              <div className="relative min-h-[120px]">
                 {!isAuthenticated && (
                   <div 
                     className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-background/90 transition-colors"
@@ -530,8 +530,8 @@ const BookDetails = () => {
                   >
                     <div className="text-center px-3 py-2">
                       <LogIn className="h-6 w-6 text-primary mx-auto mb-1.5" />
-                      <p className="text-xs font-semibold mb-0.5 leading-tight">Sign in to rate this book</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">Log in to share your rating</p>
+                      <p className="text-sm font-semibold mb-1 leading-tight">Sign in to rate this book</p>
+                      <p className="text-xs text-muted-foreground leading-tight">Log in to share your rating</p>
                     </div>
                   </div>
                 )}
@@ -578,8 +578,8 @@ const BookDetails = () => {
                   >
                     <div className="text-center px-3 py-2">
                       <LogIn className="h-6 w-6 text-primary mx-auto mb-1.5" />
-                      <p className="text-xs font-semibold mb-0.5 leading-tight">Sign in to comment</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">Join the discussion about this book</p>
+                      <p className="text-sm font-semibold mb-1 leading-tight">Sign in to comment</p>
+                      <p className="text-xs text-muted-foreground leading-tight">Join the discussion about this book</p>
                     </div>
                   </div>
                 )}
