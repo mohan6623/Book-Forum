@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to bookforum project
 
 ## Deployed URLs
 - **Frontend**: https://main.d3uwoq5i447ir.amplifyapp.com/

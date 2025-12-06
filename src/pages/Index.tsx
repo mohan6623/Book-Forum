@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 
 const Index = () => {
-  useScrollRestoration();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -73,6 +72,9 @@ const Index = () => {
     },
     initialPageParam: 0,
   });
+
+  // Use scroll restoration with data loading state
+  useScrollRestoration(!isLoading && !!data);
 
   // Flatten all pages into single array
   const allBooks = useMemo(() => {
