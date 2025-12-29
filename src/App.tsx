@@ -13,6 +13,9 @@ import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
 import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
+import OAuth2Redirect from "./pages/OAuth2Redirect";
+import OAuth2Success from "./pages/OAuth2Success";
+import OAuth2Failure from "./pages/OAuth2Failure";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,9 @@ const App = () => (
               <Route path="/book/:id" element={<BookDetails />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/oauth2/redirect" element={<OAuth2Redirect />} />
+              <Route path="/oauth2/success" element={<OAuth2Success />} />
+              <Route path="/oauth2/failure" element={<OAuth2Failure />} />
               <Route
                 path="/admin"
                 element={

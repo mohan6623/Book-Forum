@@ -1,6 +1,8 @@
 // Prefer env override (Vite) with sensible default for local Spring Boot
 export const API_BASE_URL =
-  (import.meta as any)?.env?.VITE_API_BASE_URL ?? 'https://api.bookforum.app';
+  import.meta.env.VITE_API_BASE_URL ?? 'https://api.bookforum.app';
+
+console.log('Final API_BASE_URL:', API_BASE_URL);
 
 export const API_ENDPOINTS = {
   BOOKS: '/api/books',
@@ -21,4 +23,7 @@ export const API_ENDPOINTS = {
   // User availability checks
   AVAILABLE_USERNAME: (username: string) => `/api/available/username?username=${encodeURIComponent(username)}`,
   AVAILABLE_MAIL: (mail: string) => `/api/available/mail?mail=${encodeURIComponent(mail)}`,
+  // OAuth2 endpoints (not prefixed with /api)
+  OAUTH2_GOOGLE: '/oauth2/authorization/google',
+  OAUTH2_GITHUB: '/oauth2/authorization/github',
 } as const;

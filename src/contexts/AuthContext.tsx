@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService, JwtResponse, getToken, clearToken } from '@/services/authService';
+import { authService, JwtResponse, getToken, clearToken, setToken } from '@/services/authService';
 import { userService } from '@/services/userService';
 import { jwtDecode } from 'jwt-decode';
 
@@ -13,6 +13,7 @@ interface AuthContextType {
   loading: boolean;
   refreshUser: () => Promise<void>;
   updateUserData: (updatedUser: Partial<JwtResponse['user']>) => void;
+  handleOAuth2Login: (token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -150,6 +151,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try { localStorage.removeItem(USER_STORAGE_KEY); } catch {}
   };
 
+  const handleOAuth2Login = (token: string) => {
+    // Store the token from OAuth2 redirect
+    setToken(token);
+    
+    // Decode and set user from token
+    try {
+      const decoded = jwtDecode<any>(token);
+      
+      // Check if token is expired
+      if (decoded.exp * 1000 <= Date.now()) {
+        clearToken();
+        throw new Error('Token expired');
+      }
+
+      let extractedId: number | undefined;
+      if (decoded.id) extractedId = Number(decoded.id);
+      else if (decoded.userId) extractedId = Number(decoded.userId);
+      else if (!isNaN(Number(decoded.sub))) extractedId = Number(decoded.sub);
+
+      const normalizedUser: any = {
+        id: extractedId,
+        username: decoded.sub,
+        role: decoded.role,
+        email: decoded.sub, // OAuth2 users use email as username
+      };
+      
+      setUser(normalizedUser);
+      try {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
+      } catch {}
+    } catch (error) {
+      clearToken();
+      throw error;
+    }
+  };
+
   const isAuthenticated = !!user;
   // Normalize role so it matches whether backend returns 'ADMIN' or 'ROLE_ADMIN'
   const normalizedRole = user?.role ? (user.role.startsWith('ROLE_') ? user.role.substring(5) : user.role) : undefined;
@@ -167,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         refreshUser,
         updateUserData,
+        handleOAuth2Login,
       }}
     >
       {children}
