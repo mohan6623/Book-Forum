@@ -11,6 +11,8 @@ export type JwtResponse = {
     imagePublicId?: string; // Cloudinary public ID
     imageUrl?: string; // Cloudinary URL
     imageData?: string;
+    oauthProviders?: string[]; // List of connected OAuth providers (GOOGLE, GITHUB)
+    hasPassword?: boolean; // Whether user has a password set
   };
 };
 
@@ -35,7 +37,7 @@ export function getAuthHeader(): Record<string, string> {
 
 export const authService = {
   async register(user: { username: string; email?: string; mail?: string; password: string; role?: string }): Promise<void> {
-    // Backend expects property name 'mail', map from 'email' if provided
+    // Backend expects property name 'email'
     const roleNormalized = user.role
       ? (user.role.startsWith('ROLE_') ? user.role : `ROLE_${user.role}`)
       : undefined;
@@ -43,7 +45,7 @@ export const authService = {
       username: user.username,
       password: user.password,
       role: roleNormalized,
-      mail: user.mail ?? user.email,
+      email: user.mail ?? user.email,
     } as const;
     const res = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
@@ -59,7 +61,13 @@ export const authService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(user),
     });
-    if (!res.ok) throw new Error('Login failed');
+    if (!res.ok) {
+      // Try to get the error message from the response body
+      const errorText = await res.text();
+      const error = new Error(errorText || 'Login failed');
+      (error as any).status = res.status;
+      throw error;
+    }
     const data: JwtResponse = await res.json();
     if (data?.token) setToken(data.token);
     return data;

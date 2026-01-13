@@ -15,7 +15,12 @@ import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 import OAuth2Redirect from "./pages/OAuth2Redirect";
 import OAuth2Success from "./pages/OAuth2Success";
+import OAuth2ConnectSuccess from "./pages/OAuth2ConnectSuccess";
 import OAuth2Failure from "./pages/OAuth2Failure";
+import OAuthEmailRequired from "./pages/OAuthEmailRequired";
+import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -32,9 +37,14 @@ const App = () => (
               <Route path="/book/:id" element={<BookDetails />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/oauth2/redirect" element={<OAuth2Redirect />} />
               <Route path="/oauth2/success" element={<OAuth2Success />} />
+              <Route path="/oauth2/connect-success" element={<OAuth2ConnectSuccess />} />
               <Route path="/oauth2/failure" element={<OAuth2Failure />} />
+              <Route path="/oauth2/email-required" element={<OAuthEmailRequired />} />
               <Route
                 path="/admin"
                 element={

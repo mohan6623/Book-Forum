@@ -1,12 +1,13 @@
 import { X, Star, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { FilterOptions } from "@/types/book";
+import { FilterOptions, CategoryWithCount, AuthorWithCount } from "@/types/book";
+import { filterMetadataService } from "@/services/bookService";
 
 interface FilterPanelProps {
   isOpen: boolean;
@@ -14,32 +15,6 @@ interface FilterPanelProps {
   filters: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
 }
-
-const categories = [
-  "Fiction",
-  "Mystery",
-  "Romance",
-  "Sci-Fi",
-  "Fantasy",
-  "Biography",
-  "History",
-  "Thriller",
-  "Self-Help",
-  "Science",
-  "Non-Fiction",
-];
-
-const authors = [
-  "Andy Weir",
-  "Alex Michaelides",
-  "C.S. Lewis",
-  "Cormac McCarthy",
-  "Don Rosa",
-  "J.K. Rowling",
-  "Stephen King",
-  "George R.R. Martin",
-  "Agatha Christie",
-];
 
 const ratingOptions = [
   { value: 5, label: "5+ Stars" },
@@ -52,6 +27,25 @@ const ratingOptions = [
 const FilterPanel = ({ isOpen, onClose, filters, onFilterChange }: FilterPanelProps) => {
   const [categorySearch, setCategorySearch] = useState("");
   const [authorSearch, setAuthorSearch] = useState("");
+  const [categories, setCategories] = useState<CategoryWithCount[]>([]);
+  const [authors, setAuthors] = useState<AuthorWithCount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch categories and authors from backend
+  useEffect(() => {
+    const fetchFilterMetadata = async () => {
+      setLoading(true);
+      const [categoriesData, authorsData] = await Promise.all([
+        filterMetadataService.getCategories(),
+        filterMetadataService.getAuthors(),
+      ]);
+      setCategories(categoriesData);
+      setAuthors(authorsData);
+      setLoading(false);
+    };
+    
+    fetchFilterMetadata();
+  }, []);
 
   const handleCategoryToggle = (category: string) => {
     const newCategories = filters.category.includes(category)
@@ -88,11 +82,11 @@ const FilterPanel = ({ isOpen, onClose, filters, onFilterChange }: FilterPanelPr
   };
 
   const filteredCategories = categories.filter((cat) =>
-    cat.toLowerCase().includes(categorySearch.toLowerCase())
+    cat?.category?.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
-  const filteredAuthors = authors.filter((author) =>
-    author.toLowerCase().includes(authorSearch.toLowerCase())
+  const filteredAuthors = authors.filter((item) =>
+    item?.author?.toLowerCase().includes(authorSearch.toLowerCase())
   );
 
   const hasActiveFilters = filters.category.length > 0 || filters.authors.length > 0 || filters.rating > 0;
@@ -198,22 +192,29 @@ const FilterPanel = ({ isOpen, onClose, filters, onFilterChange }: FilterPanelPr
                 />
               </div>
               <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
-                {filteredCategories.map((category) => (
-                  <div key={category} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`cat-${category}`}
-                      checked={filters.category.includes(category)}
-                      onCheckedChange={() => handleCategoryToggle(category)}
-                      className="border-border data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                    />
-                    <Label
-                      htmlFor={`cat-${category}`}
-                      className="text-sm font-normal text-foreground cursor-pointer hover:text-primary transition-colors flex-1"
-                    >
-                      {category}
-                    </Label>
-                  </div>
-                ))}
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Loading categories...</p>
+                ) : filteredCategories.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No categories found</p>
+                ) : (
+                  filteredCategories.map((item) => (
+                    <div key={item.category} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`cat-${item.category}`}
+                        checked={filters.category.includes(item.category)}
+                        onCheckedChange={() => handleCategoryToggle(item.category)}
+                        className="border-border data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      />
+                      <Label
+                        htmlFor={`cat-${item.category}`}
+                        className="text-sm font-normal text-foreground cursor-pointer hover:text-primary transition-colors flex-1"
+                      >
+                        {item.category}
+                        <span className="ml-2 text-[8px] text-muted-foreground">- {item.counts}</span>
+                      </Label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -261,22 +262,29 @@ const FilterPanel = ({ isOpen, onClose, filters, onFilterChange }: FilterPanelPr
                 />
               </div>
               <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
-                {filteredAuthors.map((author) => (
-                  <div key={author} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`author-${author}`}
-                      checked={filters.authors.includes(author)}
-                      onCheckedChange={() => handleAuthorToggle(author)}
-                      className="border-border data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                    />
-                    <Label
-                      htmlFor={`author-${author}`}
-                      className="text-sm font-normal text-foreground cursor-pointer hover:text-primary transition-colors flex-1"
-                    >
-                      {author}
-                    </Label>
-                  </div>
-                ))}
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Loading authors...</p>
+                ) : filteredAuthors.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No authors found</p>
+                ) : (
+                  filteredAuthors.map((item) => (
+                    <div key={item.author} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`author-${item.author}`}
+                        checked={filters.authors.includes(item.author)}
+                        onCheckedChange={() => handleAuthorToggle(item.author)}
+                        className="border-border data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                      />
+                      <Label
+                        htmlFor={`author-${item.author}`}
+                        className="text-sm font-normal text-foreground cursor-pointer hover:text-primary transition-colors flex-1"
+                      >
+                        {item.author}
+                        <span className="ml-2 text-[10px] text-muted-foreground">- {item.counts}</span>
+                      </Label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

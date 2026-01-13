@@ -14,6 +14,17 @@ const OAuth2Success = () => {
     const token = searchParams.get('token');
 
     if (token) {
+      // If opened in popup, send message to parent and close
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(
+          { type: 'oauth-success', token },
+          window.location.origin
+        );
+        window.close();
+        return;
+      }
+
+      // Otherwise, handle normally (fallback for non-popup flow)
       try {
         handleOAuth2Login(token);
         toast({
@@ -30,6 +41,16 @@ const OAuth2Success = () => {
         navigate('/login', { replace: true });
       }
     } else {
+      // If opened in popup, send error to parent and close
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(
+          { type: 'oauth-error', error: 'No token received' },
+          window.location.origin
+        );
+        window.close();
+        return;
+      }
+      
       navigate('/login', { replace: true });
     }
   }, [searchParams, navigate, handleOAuth2Login, toast]);

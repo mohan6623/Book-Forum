@@ -5,6 +5,8 @@ import {
   CommentsDto,
   PageResponse,
   RatingsBreakdown,
+  CategoryWithCount,
+  AuthorWithCount,
   mapBookDtoToBook,
 } from '@/types/book';
 import { getAuthHeader } from '@/services/authService';
@@ -215,6 +217,30 @@ export const bookService = {
       headers: { ...getAuthHeader() },
     });
     if (!res.ok) throw new Error('Failed to delete comment');
+  },
+};
+
+export const filterMetadataService = {
+  async getCategories(): Promise<CategoryWithCount[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_CATEGORIES}`);
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      return await res.json();
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return [];
+    }
+  },
+
+  async getAuthors(): Promise<AuthorWithCount[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_AUTHORS}`);
+      if (!res.ok) throw new Error('Failed to fetch authors');
+      return await res.json();
+    } catch (error) {
+      console.error('Error fetching authors:', error);
+      return [];
+    }
   },
 };
 

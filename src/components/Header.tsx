@@ -21,8 +21,16 @@ const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftC
   const { isAuthenticated } = useAuth();
 
   const handleLogoClick = () => {
-    saveScrollPosition();
-    navigate('/');
+    // Clear search input when clicking logo
+    if (onSearchChange) {
+      onSearchChange('');
+    }
+    // If already on home page, just clear search; otherwise navigate
+    if (location.pathname !== '/') {
+      navigate('/');
+    }
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

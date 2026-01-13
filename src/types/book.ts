@@ -34,15 +34,15 @@ export interface CommentsDto {
 
 export type RatingsBreakdown = Record<number, number>; // {1..5 => count}
 
-// Actual backend response structure
+// Spring Boot Page response structure - pagination info at root level
 export interface PageResponse<T> {
   content: T[];
-  page: {
-    size: number;
-    number: number; // current page number (0-indexed)
-    totalElements: number;
-    totalPages: number;
-  };
+  size: number;
+  number: number; // current page number (0-indexed)
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
 }
 
 export type FilterOptions = {
@@ -50,6 +50,17 @@ export type FilterOptions = {
   authors: string[];
   rating: number; // Minimum rating filter (0, 1, 2, 3, 4, 5)
 };
+
+// Dynamic filter metadata from backend
+export interface CategoryWithCount {
+  category: string;
+  counts: number;
+}
+
+export interface AuthorWithCount {
+  author: string;
+  counts: number;
+}
 
 // Helpers to map backend DTOs to UI models
 export function toImageUrl(dto: BookDto): string {

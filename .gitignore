@@ -31,3 +31,6 @@ dist-ssr
 # md files
 *.md
 !README.md
+
+# env
+.env.production

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, JwtResponse, getToken, clearToken, setToken } from '@/services/authService';
 import { userService } from '@/services/userService';
 import { jwtDecode } from 'jwt-decode';
+import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
 interface AuthContextType {
   user: JwtResponse['user'] | null;
@@ -12,6 +13,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  refreshAuth: () => void;
   updateUserData: (updatedUser: Partial<JwtResponse['user']>) => void;
   handleOAuth2Login: (token: string) => void;
 }
@@ -57,7 +59,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if ((decoded as any).id) extractedId = Number((decoded as any).id);
             else if ((decoded as any).userId) extractedId = Number((decoded as any).userId);
             else if (!isNaN(Number(decoded.sub))) extractedId = Number(decoded.sub);
-            setUser({ id: extractedId, username: decoded.sub, role: decoded.role } as any);
+            setUser({ 
+              id: extractedId, 
+              username: decoded.sub, 
+              role: decoded.role,
+              imageData: (decoded as any).imageUrl 
+            } as any);
           }
         } else {
           clearToken();
@@ -127,9 +134,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshUser = async () => {
-    // Since backend doesn't have a GET user endpoint, 
-    // this is a placeholder for future implementation
-  // placeholder for future implementation
+    // Fetch fresh user data from backend
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.USER_PROFILE}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser((prevUser: any) => {
+          const updatedUser = { ...prevUser, ...userData };
+          try { localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser)); } catch {}
+          return updatedUser;
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
   };
   
   const updateUserData = (updatedUser: Partial<JwtResponse['user']>) => {
@@ -175,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: decoded.sub,
         role: decoded.role,
         email: decoded.sub, // OAuth2 users use email as username
+        imageData: decoded.imageUrl,
       };
       
       setUser(normalizedUser);
@@ -184,6 +211,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       clearToken();
       throw error;
+    }
+  };
+
+  // Re-read token from storage and update user state (used after email verification)
+  const refreshAuth = () => {
+    const token = getToken();
+    if (token) {
+      try {
+        const decoded = jwtDecode<any>(token);
+        if (decoded.exp * 1000 > Date.now()) {
+          let extractedId: number | undefined;
+          if (decoded.id) extractedId = Number(decoded.id);
+          else if (decoded.userId) extractedId = Number(decoded.userId);
+          else if (!isNaN(Number(decoded.sub))) extractedId = Number(decoded.sub);
+
+          const normalizedUser: any = {
+            id: extractedId,
+            username: decoded.sub,
+            role: decoded.role,
+            email: decoded.email || decoded.sub,
+            imageData: decoded.imageUrl,
+          };
+          
+          setUser(normalizedUser);
+          try {
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
+          } catch {}
+        } else {
+          clearToken();
+          setUser(null);
+        }
+      } catch {
+        clearToken();
+        setUser(null);
+      }
     }
   };
 
@@ -203,6 +265,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         loading,
         refreshUser,
+        refreshAuth,
         updateUserData,
         handleOAuth2Login,
       }}

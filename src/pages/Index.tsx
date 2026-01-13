@@ -65,8 +65,8 @@ const Index = () => {
       return bookService.getBooks(page, 18);
     },
     getNextPageParam: (lastPage) => {
-      const currentPage = lastPage.page?.number ?? 0;
-      const totalPages = lastPage.page?.totalPages ?? 1;
+      const currentPage = lastPage.number ?? 0;
+      const totalPages = lastPage.totalPages ?? 1;
       const isLast = currentPage >= totalPages - 1;
       return isLast ? undefined : currentPage + 1;
     },
@@ -78,7 +78,11 @@ const Index = () => {
 
   // Flatten all pages into single array
   const allBooks = useMemo(() => {
-    return data?.pages.flatMap((page) => page.content) || [];
+    const books = data?.pages.flatMap((page) => page.content) || [];
+    if (books.length > 0) {
+      console.log('📚 [Frontend Index] Books loaded:', books.map(b => ({ id: b.id, title: b.title })));
+    }
+    return books;
   }, [data]);
 
   // Filter logic
@@ -86,18 +90,21 @@ const Index = () => {
     if (!allBooks.length) return [];
     
     return allBooks.filter((book) => {
-      // Category filter
+      // Category filter (case-insensitive comparison)
+      const bookCategory = book.category?.toLowerCase() || '';
       const matchesCategory =
         filters.category.length === 0 ||
-        filters.category.includes(book.category);
+        filters.category.some(cat => cat.toLowerCase() === bookCategory);
 
-      // Author filter
+      // Author filter (case-insensitive comparison)
+      const bookAuthor = book.author?.toLowerCase() || '';
       const matchesAuthor =
         filters.authors.length === 0 ||
-        filters.authors.includes(book.author);
+        filters.authors.some(author => author.toLowerCase() === bookAuthor);
 
-      // Rating filter
-      const matchesRating = filters.rating === 0 || book.rating >= filters.rating;
+      // Rating filter (handle undefined/null ratings)
+      const bookRating = book.rating ?? 0;
+      const matchesRating = filters.rating === 0 || bookRating >= filters.rating;
 
       return matchesCategory && matchesAuthor && matchesRating;
     });

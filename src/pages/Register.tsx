@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookIcon, CheckCircle2, Loader2, XCircle, Eye, EyeOff } from 'lucide-react';
+import { BookIcon, CheckCircle2, Loader2, XCircle, Eye, EyeOff, Mail, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { userService } from '@/services/userService';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Separator } from '@/components/ui/separator';
 import { API_BASE_URL } from '@/config/api';
+import { emailService } from '@/services/emailService';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -22,6 +23,9 @@ const Register = () => {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendingEmail, setResendingEmail] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -187,11 +191,12 @@ const Register = () => {
 
     try {
       await register(username.trim(), email.trim(), password);
+      setRegisteredEmail(email.trim());
+      setRegistrationSuccess(true);
       toast({
         title: 'Registration successful!',
-        description: 'You can now login with your credentials.',
+        description: 'Please check your email to verify your account.',
       });
-      navigate('/login');
     } catch (error) {
       toast({
         title: 'Registration failed',
@@ -200,6 +205,27 @@ const Register = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!registeredEmail) return;
+    
+    setResendingEmail(true);
+    try {
+      await emailService.resendVerification(registeredEmail);
+      toast({
+        title: 'Email Sent',
+        description: 'Verification email has been resent to your inbox.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to resend',
+        description: error.message || 'Please try again later.',
+        variant: 'destructive',
+      });
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -288,6 +314,62 @@ const Register = () => {
     !checkingUsername &&
     !checkingEmail;
 
+  // Show success screen after registration
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1 flex flex-col items-center">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+              <Mail className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl text-center">Check Your Email</CardTitle>
+            <CardDescription className="text-center">
+              We've sent a verification link to
+            </CardDescription>
+            <p className="font-medium text-primary">{registeredEmail}</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Click the link in your email to verify your account and get started.
+              The link will expire in 24 hours.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                onClick={handleResendVerification}
+                disabled={resendingEmail}
+                className="w-full"
+              >
+                {resendingEmail ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Resend Verification Email"
+                )}
+              </Button>
+              <Link to="/login" className="w-full">
+                <Button variant="ghost" className="w-full">
+                  Back to Login
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2 text-center text-sm text-muted-foreground">
+            <p>
+              Didn't receive the email? Check your spam folder or try resending.
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="absolute top-4 right-4">
@@ -295,10 +377,10 @@ const Register = () => {
       </div>
       <Card ref={cardRef} className="w-full max-w-md">
         <CardHeader className="space-y-1 flex flex-col items-center">
-          <div className="flex items-center gap-2 mb-2">
+          <Link to="/" className="flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity cursor-pointer">
             <BookIcon className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold">Book Forum</h1>
-          </div>
+          </Link>
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>Enter your details to create a new account</CardDescription>
         </CardHeader>
