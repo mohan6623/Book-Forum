@@ -8,6 +8,10 @@ export type JwtResponse = {
     name?: string;
     role?: string;
     email?: string;
+    secondaryEmail?: string; // Secondary email field from backend
+    emailVerified?: boolean; // Whether primary email is verified
+    createdAt?: string; // ISO timestamp
+    updatedAt?: string; // ISO timestamp
     imagePublicId?: string; // Cloudinary public ID
     imageUrl?: string; // Cloudinary URL
     imageData?: string;

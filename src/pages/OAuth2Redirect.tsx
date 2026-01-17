@@ -1,49 +1,58 @@
-import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const OAuth2Redirect = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { handleOAuth2Login } = useAuth();
   const { toast } = useToast();
+  const processedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution
+    if (processedRef.current) return;
+    
     const token = searchParams.get('token');
     const error = searchParams.get('error');
 
     if (error) {
+      processedRef.current = true;
       toast({
         title: 'Authentication failed',
         description: 'There was an error logging in with OAuth2. Please try again.',
         variant: 'destructive',
       });
-      navigate('/login', { replace: true });
+      window.location.href = '/login';
       return;
     }
 
     if (token) {
+      processedRef.current = true;
+      
       try {
         handleOAuth2Login(token);
+        
         toast({
           title: 'Welcome!',
           description: 'You have successfully logged in.',
         });
-        navigate('/', { replace: true });
+        
+        // Use window.location for reliable redirect
+        window.location.href = '/';
       } catch (error) {
         toast({
           title: 'Login failed',
           description: 'Failed to process authentication token.',
           variant: 'destructive',
         });
-        navigate('/login', { replace: true });
+        window.location.href = '/login';
       }
     } else {
-      navigate('/login', { replace: true });
+      window.location.href = '/login';
     }
-  }, [searchParams, navigate, handleOAuth2Login, toast]);
+  }, [searchParams, handleOAuth2Login, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">

@@ -49,7 +49,6 @@ const BookCard = ({ book }: BookCardProps) => {
   };
 
   const handleClick = () => {
-    console.log(`📚 [Frontend BookCard] Navigating to book: "${book.title}" with ID: ${book.id}`);
     // Save current scroll position before navigating
     saveScrollPosition();
     navigate(`/book/${book.id}`);

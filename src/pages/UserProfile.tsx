@@ -14,6 +14,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import Header from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, User, Camera, Lock, Mail, Eye, EyeOff, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
@@ -820,14 +825,26 @@ const UserProfile = () => {
                   Connect
                 </Button>
               ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => handleOAuthDisconnect('Google')}
-                >
-                  Remove
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleOAuthDisconnect('Google')}
+                        disabled={!hasPassword && oauthProviders.length === 1}
+                      >
+                        Remove
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!hasPassword && oauthProviders.length === 1 && (
+                    <TooltipContent>
+                      <p>Set a password or link another account before removing your last login method</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               )}
             </div>
 
@@ -846,14 +863,26 @@ const UserProfile = () => {
                   Connect
                 </Button>
               ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => handleOAuthDisconnect('GitHub')}
-                >
-                  Remove
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleOAuthDisconnect('GitHub')}
+                        disabled={!hasPassword && oauthProviders.length === 1}
+                      >
+                        Remove
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!hasPassword && oauthProviders.length === 1 && (
+                    <TooltipContent>
+                      <p>Set a password or link another account before removing your last login method</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               )}
             </div>
           </CardContent>
@@ -878,7 +907,7 @@ const UserProfile = () => {
                 variant="outline"
                 size="sm"
               >
-                {hasPassword ? 'Change password' : 'Set password'}
+                {hasPassword ? 'Update Password' : 'Set Password'}
               </Button>
             </div>
           </CardContent>
@@ -995,6 +1024,7 @@ const UserProfile = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Display Name</DialogTitle>
+            <DialogDescription>Change how your name appears on your profile</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
@@ -1109,6 +1139,7 @@ const UserProfile = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Primary Email</DialogTitle>
+            <DialogDescription>Update your primary email address for login and notifications</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">

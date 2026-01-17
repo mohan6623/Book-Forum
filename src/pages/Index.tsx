@@ -79,9 +79,6 @@ const Index = () => {
   // Flatten all pages into single array
   const allBooks = useMemo(() => {
     const books = data?.pages.flatMap((page) => page.content) || [];
-    if (books.length > 0) {
-      console.log('📚 [Frontend Index] Books loaded:', books.map(b => ({ id: b.id, title: b.title })));
-    }
     return books;
   }, [data]);
 
