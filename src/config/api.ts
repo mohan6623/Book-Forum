@@ -1,6 +1,23 @@
-// Prefer env override (Vite) with sensible default for local Spring Boot
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'https://api.bookforum.app';
+// Prefer env override (Vite) with sensible default for production
+// In production, always use the secure HTTPS endpoint
+const envUrl = import.meta.env.VITE_API_BASE_URL;
+const defaultUrl = 'https://api.bookforum.app';
+
+// Ensure we use HTTPS in production to avoid mixed content errors
+export const API_BASE_URL = (() => {
+  if (!envUrl) return defaultUrl;
+  
+  // In production (HTTPS site), force HTTPS API URL to prevent mixed content
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    // If env URL is HTTP, replace with HTTPS or use default
+    if (envUrl.startsWith('http://')) {
+      console.warn('Mixed content prevented: Using HTTPS API endpoint in production');
+      return defaultUrl;
+    }
+  }
+  
+  return envUrl;
+})();
 
 // console.log('Final API_BASE_URL:', API_BASE_URL);
 

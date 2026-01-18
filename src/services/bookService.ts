@@ -10,7 +10,6 @@ import {
   mapBookDtoToBook,
 } from '@/types/book';
 import { getAuthHeader } from '@/services/authService';
-import { SAMPLE_BOOK_DTO, SAMPLE_BOOKS_DTO } from '@/data/sampleBooks';
 
 export const bookService = {
   async getBooks(page: number = 0, size: number = 20): Promise<PageResponse<Book>> {
@@ -18,48 +17,30 @@ export const bookService = {
     const validPage = typeof page === 'number' && !isNaN(page) ? page : 0;
     const validSize = typeof size === 'number' && !isNaN(size) ? size : 20;
     
-    try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}?page=${validPage}&size=${validSize}`);
-      if (res.status === 204) {
-        return emptyPageResponse<Book>();
-      }
-      if (!res.ok) throw new Error('Failed to fetch books');
-      const data: PageResponse<BookDto> = await res.json();
-      return mapPage(data, mapBookDtoToBook);
-    } catch (error) {
-      // Return sample books when backend is down
-      return {
-        content: SAMPLE_BOOKS_DTO.map(mapBookDtoToBook),
-        page: {
-          size: 20,
-          number: 0,
-          totalElements: SAMPLE_BOOKS_DTO.length,
-          totalPages: 1,
-        },
-      };
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}?page=${validPage}&size=${validSize}`);
+    if (res.status === 204) {
+      return emptyPageResponse<Book>();
     }
+    if (!res.ok) throw new Error('Failed to fetch books');
+    const data: PageResponse<BookDto> = await res.json();
+    return mapPage(data, mapBookDtoToBook);
   },
 
   async getBookById(id: number): Promise<Book> {
-    try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOK_BY_ID(id)}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeader(),
-        },
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error('Unauthorized: Please log in to view book details');
-        }
-        throw new Error('Failed to fetch book');
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOK_BY_ID(id)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Unauthorized: Please log in to view book details');
       }
-      const dto: BookDto = await res.json();
-      return mapBookDtoToBook(dto);
-    } catch (error) {
-      // Return sample book with the requested ID
-      return mapBookDtoToBook({ ...SAMPLE_BOOK_DTO, id });
+      throw new Error('Failed to fetch book');
     }
+    const dto: BookDto = await res.json();
+    return mapBookDtoToBook(dto);
   },
 
   async searchBooks(
@@ -155,34 +136,16 @@ export const bookService = {
   },
 
   async getRatings(id: number): Promise<RatingsBreakdown> {
-    try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_RATINGS(id)}`);
-      if (!res.ok) throw new Error('Failed to fetch ratings');
-      return res.json();
-    } catch (error) {
-      const { SAMPLE_RATINGS_BREAKDOWN } = await import('@/data/sampleBooks');
-      return SAMPLE_RATINGS_BREAKDOWN;
-    }
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_RATINGS(id)}`);
+    if (!res.ok) throw new Error('Failed to fetch ratings');
+    return res.json();
   },
 
   async getComments(id: number, page = 0, size = 20) {
-    try {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_COMMENTS(id)}?page=${page}&size=${size}`);
-      if (res.status === 204) return emptyPageResponse<CommentsDto>();
-      if (!res.ok) throw new Error('Failed to fetch comments');
-      return res.json() as Promise<PageResponse<CommentsDto>>;
-    } catch (error) {
-      const { SAMPLE_COMMENTS } = await import('@/data/sampleBooks');
-      return {
-        content: SAMPLE_COMMENTS,
-        page: {
-          size: size,
-          number: 0,
-          totalElements: SAMPLE_COMMENTS.length,
-          totalPages: 1,
-        },
-      };
-    }
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_COMMENTS(id)}?page=${page}&size=${size}`);
+    if (res.status === 204) return emptyPageResponse<CommentsDto>();
+    if (!res.ok) throw new Error('Failed to fetch comments');
+    return res.json() as Promise<PageResponse<CommentsDto>>;
   },
 
   async addComment(id: number, comment: string): Promise<CommentsDto> {
