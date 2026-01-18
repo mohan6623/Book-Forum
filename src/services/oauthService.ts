@@ -56,18 +56,47 @@ export const oauthService = {
   /**
    * Submit email for GitHub OAuth when email is required
    */
-  async submitOAuthEmail(pendingToken: string, email: string): Promise<{ message: string }> {
+  async submitOAuthEmail(pendingToken: string, email: string, username?: string, name?: string): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/api/oauth/submit-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ pendingToken, email }),
+      body: JSON.stringify({ pendingToken, email, username, name }),
     });
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ message: 'Failed to submit email' }));
       throw new Error(errorData.message || 'Failed to submit email');
+    }
+
+    return res.json();
+  },
+
+  /**
+   * Complete OAuth registration (for new users who need to set username/display name)
+   */
+  async completeRegistration(pendingToken: string, username: string, name?: string): Promise<{
+    message: string;
+    token: string;
+    userId: number;
+    username: string;
+    email: string;
+    name: string;
+    imageUrl: string;
+    role: string;
+  }> {
+    const res = await fetch(`${API_BASE_URL}/api/oauth/complete-registration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ pendingToken, username, name }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: 'Failed to complete registration' }));
+      throw errorData;
     }
 
     return res.json();

@@ -1,5 +1,5 @@
 import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
-import { JwtResponse, setToken } from './authService';
+import { JwtResponse, setToken, setRefreshToken } from './authService';
 
 export interface PasswordResetDto {
   token: string;
@@ -31,6 +31,9 @@ export const emailService = {
     const jwtResponse: JwtResponse = await res.json();
     if (jwtResponse?.token) {
       setToken(jwtResponse.token);
+    }
+    if (jwtResponse?.refreshToken) {
+      setRefreshToken(jwtResponse.refreshToken);
     }
     return { success: true, jwtResponse };
   },

@@ -324,11 +324,36 @@ const UserProfile = () => {
     }
   };
 
-  const handleCropComplete = (croppedBlob: Blob) => {
+  const handleCropComplete = async (croppedBlob: Blob) => {
     const file = new File([croppedBlob], 'profile.jpg', { type: 'image/jpeg' });
-    setImageFile(file);
     const url = URL.createObjectURL(croppedBlob);
     setPreviewUrl(url);
+
+    // Upload the profile picture immediately
+    setLoading(true);
+    try {
+      const result = await userService.updateProfilePic(file);
+      
+      // Update the user context with the new image
+      updateUserData({
+        imageData: result.imageUrl,
+      } as any);
+      
+      toast({
+        title: 'Success!',
+        description: 'Profile picture updated successfully.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Failed to update profile picture',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
+      // Revert preview on error
+      setPreviewUrl('');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAvatarClick = () => {
@@ -634,7 +659,7 @@ const UserProfile = () => {
       return;
     }
     
-    if ((!username || username === user?.username) && (!displayName || displayName === (user as any)?.name)) {
+    if ((!username || username === user?.username) && (!displayName || displayName === (user as any)?.name) && !imageFile) {
       toast({
         title: 'No changes',
         description: 'Profile information is unchanged.',
@@ -643,37 +668,37 @@ const UserProfile = () => {
       return;
     }
 
-    const userId = user?.id;
-    if (!userId || userId === 0) {
-      toast({
-        title: 'Unable to update profile',
-        description: 'Missing user id. Please re-login or contact support.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setLoading(true);
     try {
-      const updateData: any = {};
+      let updatedUsername = user?.username;
+      let updatedImageData = user?.imageData;
+      let updatedName = (user as any)?.name;
+
+      // Update username if changed - returns JWT with new token
       if (username && username !== user?.username) {
-        updateData.username = username.trim();
-      }
-      if (displayName && displayName !== (user as any)?.name) {
-        updateData.name = displayName.trim();
+        const result = await userService.updateUsername(username.trim());
+        updatedUsername = result.user.username;
+        // Token is already updated in userService.updateUsername
       }
 
-      const updatedUser = await userService.updateUser(
-        userId,
-        updateData,
-        imageFile || undefined
-      );
+      // Update display name if changed
+      if (displayName && displayName !== (user as any)?.name) {
+        const result = await userService.updateName(displayName.trim());
+        updatedName = result.name;
+      }
+
+      // Update profile picture if changed
+      if (imageFile) {
+        const result = await userService.updateProfilePic(imageFile);
+        updatedImageData = result.imageUrl;
+      }
       
       // Update the user context with the returned data
       updateUserData({
-        username: updatedUser.username,
-        imageData: updatedUser.imageData,
-      });
+        username: updatedUsername,
+        imageData: updatedImageData,
+        name: updatedName,
+      } as any);
       
       toast({
         title: 'Success!',

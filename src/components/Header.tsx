@@ -67,16 +67,6 @@ const Header = ({ isScrolled, searchQuery, onSearchChange, onFilterToggle, leftC
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {!isAuthenticated && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="hidden sm:inline-flex"
-              onClick={() => navigate('/register')}
-            >
-              Register
-            </Button>
-          )}
           <UserProfileMenu />
         </div>
       </div>

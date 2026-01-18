@@ -24,8 +24,12 @@ export const API_ENDPOINTS = {
   // User management endpoints
   REGISTER: '/api/register',
   LOGIN: '/api/login',
+  REFRESH_TOKEN: '/api/user/refresh-token',
   USER_PROFILE: '/api/user/profile',
   UPDATE_USER: (userId: number) => `/api/user/${userId}`,
+  UPDATE_USERNAME: '/api/user/update-Username',
+  UPDATE_NAME: '/api/user/update-name',
+  UPDATE_PROFILE_PIC: '/api/user/update-profile-pic',
   AVAILABLE_USERNAME: (username: string) => `/api/available/username?username=${encodeURIComponent(username)}`,
   AVAILABLE_MAIL: (mail: string) => `/api/available/mail?mail=${encodeURIComponent(mail)}`,
   

@@ -2,6 +2,7 @@ import { API_BASE_URL } from '@/config/api';
 
 export type JwtResponse = {
   token: string;
+  refreshToken?: string; // Refresh token for token renewal
   user: {
     id?: number;
     username: string;
@@ -21,6 +22,7 @@ export type JwtResponse = {
 };
 
 const TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -30,8 +32,17 @@ export function setToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token);
 }
 
+export function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function setRefreshToken(token: string) {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 export function getAuthHeader(): Record<string, string> {
@@ -40,7 +51,7 @@ export function getAuthHeader(): Record<string, string> {
 }
 
 export const authService = {
-  async register(user: { username: string; email?: string; mail?: string; password: string; role?: string }): Promise<void> {
+  async register(user: { username: string; email?: string; mail?: string; password: string; role?: string; name?: string }): Promise<void> {
     // Backend expects property name 'email'
     const roleNormalized = user.role
       ? (user.role.startsWith('ROLE_') ? user.role : `ROLE_${user.role}`)
@@ -50,6 +61,7 @@ export const authService = {
       password: user.password,
       role: roleNormalized,
       email: user.mail ?? user.email,
+      name: user.name,
     } as const;
     const res = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
@@ -74,6 +86,32 @@ export const authService = {
     }
     const data: JwtResponse = await res.json();
     if (data?.token) setToken(data.token);
+    if (data?.refreshToken) setRefreshToken(data.refreshToken);
+    return data;
+  },
+
+  /**
+   * Refresh access token using refresh token
+   */
+  async refreshAccessToken(): Promise<JwtResponse | null> {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return null;
+
+    const res = await fetch(`${API_BASE_URL}/api/user/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      // Refresh token is invalid or expired, clear all tokens
+      clearToken();
+      return null;
+    }
+
+    const data: JwtResponse = await res.json();
+    if (data?.token) setToken(data.token);
+    if (data?.refreshToken) setRefreshToken(data.refreshToken);
     return data;
   },
 

@@ -19,6 +19,7 @@ import OAuth2Success from "./pages/OAuth2Success";
 import OAuth2ConnectSuccess from "./pages/OAuth2ConnectSuccess";
 import OAuth2Failure from "./pages/OAuth2Failure";
 import OAuthEmailRequired from "./pages/OAuthEmailRequired";
+import OAuthCompleteRegistration from "./pages/OAuthCompleteRegistration";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/oauth2/connect-success" element={<OAuth2ConnectSuccess />} />
               <Route path="/oauth2/failure" element={<OAuth2Failure />} />
               <Route path="/oauth2/email-required" element={<OAuthEmailRequired />} />
+              <Route path="/oauth2/complete-registration" element={<OAuthCompleteRegistration />} />
               <Route
                 path="/admin"
                 element={

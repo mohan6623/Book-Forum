@@ -1,127 +1,135 @@
-# Welcome to bookforum project
+# 🎨 BookForum
 
-## Deployed URLs
-- **Frontend**: https://main.d3uwoq5i447ir.amplifyapp.com/
-- **Backend**: http://book-forum.ap-south-1.elasticbeanstalk.com/
+> The modern, responsive frontend for the Book Forum platform.  
+> Built with React, TypeScript, and Shadcn UI.
 
-## Project info
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Shadcn UI](https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white)](https://ui.shadcn.com/)
 
-**URL**: https://lovable.dev/projects/c6bcd9c7-733f-4904-9812-8fbb7c0ecf11
+---
 
-## How can I edit this code?
+## 🎯 Project Overview
 
-There are several ways of editing your application.
+**BookForum** is a full-stack digital library and community platform where users can discover, rate, and discuss books. It is built as a modern distributed system consisting of two key components:
 
-**Use Lovable**
+1.  **Backend API (Spring Boot)**: A robust, secure REST API handling data persistence, authentication (JWT/OAuth2), and complex business logic.
+2.  **Frontend UI (React + Vite)**: This repository contains the responsive user interface that consumes the backend API to deliver a seamless user experience.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c6bcd9c7-733f-4904-9812-8fbb7c0ecf11) and start prompting.
+### The Big Picture
+The goal of **BookForum** is to create a feature-rich social platform for readers. While the backend handles the heavy lifting of security and data management, this frontend provides the interactive layer—allowing users to search catalogs, manage profiles, and engage in discussions in real-time.
 
-Changes made via Lovable will be committed automatically to this repo.
+Together, they form a complete ecosystem for:
+*   **Discovery**: Browsing and searching vast book collections.
+*   **Community**: Connecting users through ratings, reviews, and social logins.
+*   **Management**: empowering admins with dashboard tools to curate content.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## ✨ Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 👤 User Experience
+- **Authentication** — Email/Password login, Register, Google/GitHub OAuth
+- **Book Discovery** — Search, filter by category/author, pagination
+- **Interactions** — Rate books (1-5 stars), post comments, manage profile
+- **Security** — Automatic token refresh, protected routes
 
-Follow these steps:
+### 🛠️ Admin Dashboard
+- **Book Management** — Add, edit, delete books
+- **Image Uploads** — Drag-and-drop cover image uploads (Cloudinary)
+- **Monitoring** — Access to system health status
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 🎨 UI/UX
+- **Dark Mode** — System aware theme preference
+- **Toast Notifications** — Real-time feedback for actions (Sonner)
+- **Form Validation** — Robust client-side validation (Zod + React Hook Form)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🛠️ Tech Stack
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- **Core:** React 18, TypeScript, Vite
+- **Styling:** Tailwind CSS, Shadcn UI, Class Variance Authority
+- **State/Data:** TanStack Query (React Query), Context API
+- **Forms:** React Hook Form, Zod
+- **Routing:** React Router DOM
+- **Icons:** Lucide React
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🚀 Getting Started
 
-**Use GitHub Codespaces**
+### Prerequisites
+- Node.js 18+
+- npm, pnpm, or bun
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Installation
 
-## What technologies are used for this project?
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/story-scape-ui.git
+cd story-scape-ui
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c6bcd9c7-733f-4904-9812-8fbb7c0ecf11) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
-
-## Backend integration
-
-This UI is wired to the Spring Boot backend in `springSecurity` running on http://localhost:8080 by default.
-
-- Configure the base URL via Vite env:
-
-	Create a `.env.local` in the project root if you need to override:
-
-	```sh
-	VITE_API_BASE_URL=http://localhost:8080
-	```
-
-- Endpoints used (from backend):
-	- GET `/books?page=&size=` returns a Spring `Page<BookDto>`
-	- GET `/bookid/{id}` returns `BookDto`
-	- GET `/books/search?title=&author=&category=&page=&size=` returns a page
-	- POST `/book/{id}/rating` (auth)
-	- GET `/book/{id}/ratings`
-	- GET `/book/{id}/comment?page=&size=` (204 when empty)
-	- POST `/book/{id}/comment` (auth)
-	- PUT `/book/{id}/comment` (auth)
-	- DELETE `/comment/{commentId}` (auth)
-	- Admin only:
-		- POST `/addbook` (multipart)
-		- PUT `/book/{id}` (multipart)
-		- DELETE `/book/{id}`
-
-- Auth endpoints:
-	- POST `/register` -> 201
-	- POST `/login` -> `{ token, user }`
-
-The frontend stores the JWT in localStorage and sends it in the `Authorization: Bearer <token>` header for protected calls.
-
-## Run locally (dev)
-
-Start the frontend dev server (it will run on http://localhost:5173):
-
-```powershell
+# Install dependencies
 npm install
-npm run dev
 ```
 
-If you need to override the API URL, create `.env.local` in the project root with:
+### Configuration
 
-```text
+Create a `.env.local` file in the root directory:
+
+```bash
+# Backend API URL (defaulting to localhost:8080)
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
+### Run Locally
 
+```bash
+npm run dev
+```
+The app will open at `http://localhost:5173`
+
+---
+
+## 📜 Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+
+---
+
+## 📂 Project Structure
+
+```
+src/
+├── components/        # Reusable UI components (Shadcn + Custom)
+├── pages/            # Main application pages (Login, BookDetails, etc.)
+├── hooks/            # Custom React hooks (useAuth, useToast)
+├── services/         # API service layers (Axios config)
+├── lib/              # Utilities (cn, validators)
+├── contexts/         # React Contexts (AuthContext)
+└── types/            # TypeScript interfaces
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+MIT License - See LICENSE for details.

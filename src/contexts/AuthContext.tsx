@@ -9,7 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string, role?: string) => Promise<void>;
+  register: (username: string, email: string, password: string, name?: string, role?: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   refreshUser: () => Promise<void>;
@@ -166,8 +166,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (username: string, email: string, password: string, role: string = 'USER') => {
-  const payload = { username, email, password, role };
+  const register = async (username: string, email: string, password: string, name?: string, role: string = 'USER') => {
+  const payload = { username, email, password, role, name };
   await authService.register(payload);
   };
 

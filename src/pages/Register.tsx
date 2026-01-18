@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookIcon, CheckCircle2, Loader2, XCircle, Eye, EyeOff, Mail, Home } from 'lucide-react';
+import { BookIcon, CheckCircle2, Loader2, XCircle, Eye, EyeOff, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { userService } from '@/services/userService';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -14,7 +14,12 @@ import { API_BASE_URL } from '@/config/api';
 import { emailService } from '@/services/emailService';
 
 const Register = () => {
+  // Step management (1 = email/password, 2 = username/display name)
+  const [step, setStep] = useState(1);
+  
+  // Form fields
   const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -190,7 +195,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(username.trim(), email.trim(), password);
+      await register(username.trim(), email.trim(), password, displayName.trim() || undefined);
       setRegisteredEmail(email.trim());
       setRegistrationSuccess(true);
       toast({
@@ -314,6 +319,41 @@ const Register = () => {
     !checkingUsername &&
     !checkingEmail;
 
+  // Check if step 1 is valid (email + password)
+  const isStep1Valid = useMemo(() => {
+    return (
+      emailValid &&
+      emailAvailable === true &&
+      !checkingEmail &&
+      password.length >= 8 &&
+      password.length <= 60 &&
+      passwordStrength.upperOk &&
+      passwordStrength.lowerOk &&
+      passwordStrength.numberOk &&
+      passwordStrength.specialOk &&
+      password === confirmPassword
+    );
+  }, [emailValid, emailAvailable, checkingEmail, password, confirmPassword, passwordStrength]);
+
+  // Check if step 2 is valid (username + display name)
+  const isStep2Valid = useMemo(() => {
+    return (
+      username.trim().length >= 3 &&
+      usernameAvailable === true &&
+      !checkingUsername
+    );
+  }, [username, usernameAvailable, checkingUsername]);
+
+  const handleNextStep = () => {
+    if (isStep1Valid) {
+      setStep(2);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    setStep(1);
+  };
+
   // Show success screen after registration
   if (registrationSuccess) {
     return (
@@ -382,80 +422,57 @@ const Register = () => {
             <h1 className="text-2xl font-bold">Book Forum</h1>
           </Link>
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Enter your details to create a new account</CardDescription>
+          <CardDescription>
+            {step === 1 ? 'Enter your email and create a password' : 'Choose your username and display name'}
+          </CardDescription>
+          
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 pt-2">
+            <div className={`w-8 h-1 rounded-full transition-colors ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`w-8 h-1 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+          </div>
+          <p className="text-xs text-muted-foreground">Step {step} of 2</p>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={step === 2 ? handleSubmit : (e) => { e.preventDefault(); handleNextStep(); }}>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Choose a username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                disabled={loading}
-              />
-              {/* Helper status for username */}
-              {username && (
-                <div className="h-5 text-xs flex items-center gap-1">
-                  {checkingUsername ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span className="text-muted-foreground">Checking availability…</span>
-                    </>
-                  ) : username.trim().length < 3 ? (
-                    <span className="text-muted-foreground">At least 3 characters</span>
-                  ) : usernameAvailable === true ? (
-                    <>
-                      <CheckCircle2 className="h-3 w-3 text-green-500" />
-                      <span className="text-green-600">Username available</span>
-                    </>
-                  ) : usernameAvailable === false ? (
-                    <>
-                      <XCircle className="h-3 w-3 text-destructive" />
-                      <span className="text-destructive">Username already taken</span>
-                    </>
-                  ) : null}
+            {step === 1 ? (
+              <>
+                {/* Step 1: Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                    autoFocus
+                  />
+                  {email && (
+                    <div className="h-5 text-xs flex items-center gap-1">
+                      {!emailValid ? (
+                        <span className="text-destructive">Invalid email format</span>
+                      ) : checkingEmail ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span className="text-muted-foreground">Checking availability…</span>
+                        </>
+                      ) : emailAvailable === true ? (
+                        <>
+                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          <span className="text-green-600">Email available</span>
+                        </>
+                      ) : emailAvailable === false ? (
+                        <>
+                          <XCircle className="h-3 w-3 text-destructive" />
+                          <span className="text-destructive">Email already in use</span>
+                        </>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-              {/* Helper status for email */}
-              {email && (
-                <div className="h-5 text-xs flex items-center gap-1">
-                  {!emailValid ? (
-                    <span className="text-destructive">Invalid email format</span>
-                  ) : checkingEmail ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span className="text-muted-foreground">Checking availability…</span>
-                    </>
-                  ) : emailAvailable === true ? (
-                    <>
-                      <CheckCircle2 className="h-3 w-3 text-green-500" />
-                      <span className="text-green-600">Email available</span>
-                    </>
-                  ) : emailAvailable === false ? (
-                    <>
-                      <XCircle className="h-3 w-3 text-destructive" />
-                      <span className="text-destructive">Email already in use</span>
-                    </>
-                  ) : null}
-                </div>
-              )}
-            </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
@@ -698,66 +715,153 @@ const Register = () => {
                 </div>
               )}
             </div>
+              </>
+            ) : (
+              <>
+                {/* Step 2: Username and Display Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Choose a username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    disabled={loading}
+                    autoFocus
+                  />
+                  {username && (
+                    <div className="h-5 text-xs flex items-center gap-1">
+                      {checkingUsername ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span className="text-muted-foreground">Checking availability…</span>
+                        </>
+                      ) : username.trim().length < 3 ? (
+                        <span className="text-muted-foreground">At least 3 characters</span>
+                      ) : usernameAvailable === true ? (
+                        <>
+                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          <span className="text-green-600">Username available</span>
+                        </>
+                      ) : usernameAvailable === false ? (
+                        <>
+                          <XCircle className="h-3 w-3 text-destructive" />
+                          <span className="text-destructive">Username already taken</span>
+                        </>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">
+                    Display Name <span className="text-muted-foreground text-xs">(optional)</span>
+                  </Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    placeholder="How should we call you?"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This will be shown on your profile. Leave blank to use your username.
+                  </p>
+                </div>
+              </>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={!canSubmit}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                'Register'
-              )}
-            </Button>
+            {step === 1 ? (
+              <>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={!isStep1Valid}
+                >
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
             
-            <div className="relative w-full">
-              <Separator className="my-4" />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                OR CONTINUE WITH
-              </span>
-            </div>
+                <div className="relative w-full">
+                  <Separator className="my-4" />
+                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                    OR CONTINUE WITH
+                  </span>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4 w-full">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => window.location.href = `${API_BASE_URL}/oauth2/authorization/google`}
-                className="w-full"
-              >
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Google
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => window.location.href = `${API_BASE_URL}/oauth2/authorization/github`}
-                className="w-full"
-              >
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                </svg>
-                GitHub
-              </Button>
-            </div>
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => window.location.href = `${API_BASE_URL}/oauth2/authorization/google`}
+                    className="w-full"
+                  >
+                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
+                    </svg>
+                    Google
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => window.location.href = `${API_BASE_URL}/oauth2/authorization/github`}
+                    className="w-full"
+                  >
+                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex gap-3 w-full">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={handlePreviousStep}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1" 
+                  disabled={loading || !isStep2Valid}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Account'
+                  )}
+                </Button>
+              </div>
+            )}
             
             <p className="text-sm text-muted-foreground text-center">
               Already have an account?{' '}

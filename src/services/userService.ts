@@ -1,33 +1,112 @@
 import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
-import { getAuthHeader } from '@/services/authService';
+import { getAuthHeader, setToken, setRefreshToken, JwtResponse } from '@/services/authService';
 
 export interface UserProfile {
   id: number;
   username: string;
+  name?: string;
   email?: string;
   imagePublicId?: string; // Cloudinary public ID
   imageUrl?: string; // Cloudinary URL
   imageData?: string; // Resolved URL for UI (same as imageUrl)
 }
 
+export interface UserDto {
+  id?: number;
+  username?: string;
+  name?: string;
+  email?: string;
+  imageUrl?: string;
+  imagePublicId?: string;
+}
+
 export const userService = {
   async checkUsernameAvailable(username: string): Promise<boolean> {
     if (!username || username.trim().length < 3) return false;
     const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AVAILABLE_USERNAME(username)}`);
-  if (res.status === 200) return true;
-  if (res.status === 409) return false;
-  // Treat other statuses as unavailable, no console output
-  return false;
+    if (res.status === 200) return true;
+    if (res.status === 409) return false;
+    // Treat other statuses as unavailable, no console output
+    return false;
   },
 
   async checkEmailAvailable(mail: string): Promise<boolean> {
     if (!mail) return false;
     const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AVAILABLE_MAIL(mail)}`);
-  if (res.status === 200) return true;
-  if (res.status === 409) return false;
-  return false;
+    if (res.status === 200) return true;
+    if (res.status === 409) return false;
+    return false;
   },
 
+  /**
+   * Update username (uses JWT for authentication, no userId in URL)
+   * Returns JwtResponse with new token - caller should update token in storage
+   */
+  async updateUsername(username: string): Promise<JwtResponse> {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE_USERNAME}`, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeader() 
+      },
+      body: JSON.stringify({ username: username.trim() }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Failed to update username: ${res.status} ${text}`);
+    }
+    const jwtResponse: JwtResponse = await res.json();
+    // Update tokens in storage
+    if (jwtResponse.token) {
+      setToken(jwtResponse.token);
+    }
+    if (jwtResponse.refreshToken) {
+      setRefreshToken(jwtResponse.refreshToken);
+    }
+    return jwtResponse;
+  },
+
+  /**
+   * Update display name (uses JWT for authentication, no userId in URL)
+   */
+  async updateName(name: string): Promise<UserDto> {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE_NAME}`, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeader() 
+      },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Failed to update name: ${res.status} ${text}`);
+    }
+    return res.json();
+  },
+
+  /**
+   * Update profile picture (uses JWT for authentication, no userId in URL)
+   */
+  async updateProfilePic(imageFile: File): Promise<UserDto> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE_PROFILE_PIC}`, {
+      method: 'PATCH',
+      headers: { ...getAuthHeader() },
+      body: formData,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Failed to update profile picture: ${res.status} ${text}`);
+    }
+    return res.json();
+  },
+
+  /**
+   * @deprecated Use individual update methods: updateUsername, updateName, updateProfilePic
+   */
   async updateUser(userId: number, user: Partial<UserProfile> & { password?: string }, imageFile?: File): Promise<UserProfile> {
     const form = new FormData();
 
