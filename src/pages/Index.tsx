@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Book as BookIcon, Sparkles } from "lucide-react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import BookCard from "@/components/BookCard";
 import FilterPanel from "@/components/FilterPanel";
+import ServerError from "@/components/ServerError";
 import { bookService } from "@/services/bookService";
 import { FilterOptions } from "@/types/book";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,6 +48,7 @@ const Index = () => {
 
   // Fetch books from backend with infinite scroll
   const trimmedQuery = debouncedQuery.trim();
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -71,7 +73,12 @@ const Index = () => {
       return isLast ? undefined : currentPage + 1;
     },
     initialPageParam: 0,
+    retry: 1, // Only retry once for faster feedback
   });
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ["books", trimmedQuery] });
+  };
 
   // Use scroll restoration with data loading state
   useScrollRestoration(!isLoading && !!data);
@@ -201,13 +208,11 @@ const Index = () => {
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-20 animate-fade-in">
-            <BookIcon className="h-20 w-20 text-destructive mx-auto mb-4 opacity-50" />
-            <h3 className="text-2xl font-semibold text-foreground mb-2">Failed to load books</h3>
-            <p className="text-muted-foreground">
-              Make sure your Spring Boot backend is running on http://localhost:8080
-            </p>
-          </div>
+          <ServerError
+            title="Unable to Load Books"
+            message="We couldn't connect to the server. Please check your connection and try again."
+            onRetry={handleRetry}
+          />
         ) : filteredBooks.length > 0 ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

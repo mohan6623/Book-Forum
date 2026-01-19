@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
+import ServerError from '@/components/ServerError';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Pencil, Trash2, BookOpen, BarChart3, Users } from 'lucide-react';
 import { bookService } from '@/services/bookService';
@@ -27,6 +28,7 @@ const AdminPanel = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [serverError, setServerError] = useState(false);
 
   // Form states
   const [newBook, setNewBook] = useState<Partial<BookDto>>({
@@ -50,16 +52,21 @@ const AdminPanel = () => {
   }, [searchQuery, categoryFilter, books]);
 
   const loadBooks = async () => {
+    setLoading(true);
+    setServerError(false);
     try {
       const response = await bookService.getBooks(0, 100);
       setBooks(response.content);
       setFilteredBooks(response.content);
     } catch (error) {
+      setServerError(true);
       toast({
         title: 'Failed to load books',
-        description: 'Please try again later.',
+        description: 'Server is currently unavailable.',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,6 +190,14 @@ const AdminPanel = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {serverError ? (
+          <ServerError
+            title="Unable to Load Books"
+            message="The server is currently unavailable. Please try again later."
+            onRetry={loadBooks}
+          />
+        ) : (
+          <>
         {/* Header Section */}
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -482,6 +497,8 @@ const AdminPanel = () => {
             </form>
           </DialogContent>
         </Dialog>
+          </>
+        )}
       </div>
     </div>
   );

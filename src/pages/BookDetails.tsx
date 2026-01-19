@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
+import ServerError from "@/components/ServerError";
 import { getBookDetailImage, getUserAvatarImage } from "@/lib/cloudinary";
 import { useScrollRestoration, saveScrollPosition } from "@/hooks/useScrollRestoration";
 // Rating dialog removed – direct click to rate/update
@@ -46,10 +47,11 @@ const BookDetails = () => {
   const bookId = parseInt(id || "0");
 
   // Fetch book details
-  const { data: book, isLoading: bookLoading } = useQuery({
+  const { data: book, isLoading: bookLoading, isError: bookError, refetch: refetchBook } = useQuery({
     queryKey: ["book", bookId],
     queryFn: () => bookService.getBookById(bookId),
     enabled: bookId > 0,
+    retry: 1,
   });
 
   // Fetch ratings breakdown
@@ -380,6 +382,35 @@ const BookDetails = () => {
               </Card>
             </div>
           </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (bookError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header
+          leftContent={
+            <Button 
+              variant="ghost" 
+              className="gap-2"
+              onClick={() => {
+                saveScrollPosition();
+                navigate("/");
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Books
+            </Button>
+          }
+        />
+        <main className="container mx-auto px-4 py-8">
+          <ServerError
+            title="Unable to Load Book"
+            message="We couldn't fetch the book details. The server might be temporarily unavailable."
+            onRetry={() => refetchBook()}
+          />
         </main>
       </div>
     );
